@@ -1,0 +1,6 @@
+{
+  "chainType": 0,
+  "chainId": 1,
+  "trustedFeeSigner": "YOUR_TRUSTED_FEE_SIGNER_KEY_HERE",
+  "refreshInterval": 10000
+}
