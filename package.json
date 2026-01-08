@@ -19,7 +19,8 @@
     "@railgun-community/waku-broadcaster-client-node": "^9.0.1",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.5",
-    "commander": "^14.0.2"
+    "commander": "^14.0.2",
+    "log-update": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

@@ -14,12 +14,8 @@ export function createBroadcasterTable(broadcasters: SelectedBroadcaster[]) {
   });
 
   broadcasters.forEach((b) => {
-    // Truncate address for display if too long
-    const address =
-      b.railgunAddress.length > 36 ? b.railgunAddress.substring(0, 36) + '...' : b.railgunAddress;
-
-    const token =
-      b.tokenAddress.length > 36 ? b.tokenAddress.substring(0, 36) + '...' : b.tokenAddress;
+    const address = truncateMiddle(b.railgunAddress, 36);
+    const token = truncateMiddle(b.tokenAddress, 36);
 
     table.push([
       address,
@@ -32,23 +28,28 @@ export function createBroadcasterTable(broadcasters: SelectedBroadcaster[]) {
   return table.toString();
 }
 
-export function logStatus(message: string, type: 'info' | 'success' | 'error' | 'warn' = 'info') {
+function truncateMiddle(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  const sideLength = Math.floor((maxLength - 3) / 2);
+  return text.slice(0, sideLength) + '...' + text.slice(-sideLength);
+}
+
+export function formatLogMessage(
+  message: string,
+  type: 'info' | 'success' | 'error' | 'warn' = 'info'
+): string {
   const timestamp = new Date().toLocaleTimeString();
   const prefix = chalk.gray(`[${timestamp}]`);
 
   switch (type) {
     case 'success':
-      console.log(`${prefix} ${chalk.green('✔')} ${message}`);
-      break;
+      return `${prefix} ${chalk.green('✔')} ${message}`;
     case 'error':
-      console.log(`${prefix} ${chalk.red('✖')} ${message}`);
-      break;
+      return `${prefix} ${chalk.red('✖')} ${message}`;
     case 'warn':
-      console.log(`${prefix} ${chalk.yellow('⚠')} ${message}`);
-      break;
+      return `${prefix} ${chalk.yellow('⚠')} ${message}`;
     case 'info':
     default:
-      console.log(`${prefix} ${chalk.blue('ℹ')} ${message}`);
-      break;
+      return `${prefix} ${chalk.blue('ℹ')} ${message}`;
   }
 }
