@@ -73,48 +73,67 @@ Run with config:
 npm start -- --config config.json
 ```
 
-## Understanding the Output
+## User Interface Guide
 
-The tool displays a real-time table of available broadcasters. Here is an explanation of the key
-columns to help you interpret the data:
+When you run the tool, you will see a real-time dashboard divided into three main sections:
 
-### Number of Available Wallets (Concurrency)
+### 1. Dashboard Header
 
-This column (`Wallets`) indicates the number of separate wallets the broadcaster has available to
-sign and send transactions.
+The top section provides high-level status information:
 
-- **Why it matters:** A higher number means the broadcaster can process multiple transactions
-  simultaneously (concurrency). This reduces the chance of your transaction being queued or stuck if
-  the broadcaster is busy serving other users.
+- **Title**: Shows the current Chain ID being monitored (e.g., `Chain: 1` for Ethereum).
+- **Status**: The current connection state to the Waku network (e.g., `Connected`, `Searching`).
+- **Mesh Peers**: The number of active peers in the Waku mesh network. A higher number generally
+  indicates better connectivity.
+- **Trusted Signer**: The beginning of the public key used to verify broadcaster fees.
+- **Last Scan**: The timestamp of the most recent data refresh.
 
-### Relay Adapt Contract (Verification)
+### 2. Recent Logs
 
-This column (`Relay Adapt`) shows the address of the Relay Adapt contract used by the broadcaster.
+A scrolling window displaying the last 8 system events, such as:
 
-- **Why it matters:** The Relay Adapt contract is a security component that facilitates
-  cross-contract calls from private balances. It verifies that the transaction data is correct and
-  ensures the broadcaster cannot manipulate the transaction's outcome.
+- Connection status updates.
+- Waku client initialization steps.
+- Errors or warnings (e.g., failed scans).
 
-### Fee Per Unit Gas (Cost Calculation)
+### 3. Broadcaster Table
 
-This column (`Gas Price`) displays the price the broadcaster charges for every unit of gas consumed
-by the transaction.
+The main table lists all active broadcasters found on the network.
 
-- **Why it matters:** This allows you to calculate the cost-effectiveness of using a specific
-  broadcaster.
-- **How to read it:**
-  - **Gwei (e.g., 25.00 Gwei):** Used for native tokens like ETH, BNB, or MATIC. `1 Gwei = 10^-9`.
-  - **Token Amount (e.g., 0.00006 USDC):** Used for other tokens. This is the exact amount of the
-    token charged per unit of gas.
+| Column              | Description                                                                                      |
+| :------------------ | :----------------------------------------------------------------------------------------------- |
+| **Railgun Address** | The truncated 0zk-address of the broadcaster.                                                    |
+| **Token**           | The token accepted for fees (e.g., `WETH`, `USDC`). Includes the truncated contract address.     |
+| **Gas Price**       | The cost per unit of gas charged by the broadcaster (see "Understanding Gas Prices" below).      |
+| **Exp.**            | The time when the current fee quote expires.                                                     |
+| **Rel.**            | **Reliability Score** (0-100%). Indicates the historical uptime/success rate of the broadcaster. |
+| **Wallets**         | **Available Wallets**. The number of concurrent transactions the broadcaster can process.        |
+| **Relay Adapt**     | The address of the Relay Adapt contract used for cross-contract verification.                    |
 
-**Example Calculation:**
+## Understanding Gas Prices
 
-If a transaction consumes **200,000 Gas**:
+The **Gas Price** column displays the rate charged by the broadcaster. It is formatted differently
+based on the token type to maximize readability:
 
-1.  **Scenario A (Native Token)**: Gas Price is `25 Gwei` (0.000000025 ETH).
-    - `Total Fee = 200,000 * 25 Gwei = 5,000,000 Gwei = 0.005 ETH`
-2.  **Scenario B (Stablecoin)**: Gas Price is `0.00006 USDC`.
-    - `Total Fee = 200,000 * 0.00006 USDC = 12 USDC`
+- **Native Tokens (ETH, BNB, MATIC)**: Displayed in **Gwei** (e.g., `25.00 Gwei`).
+  - `1 Gwei = 10^-9 ETH`.
+  - This matches standard gas price tracking tools like Etherscan.
+
+- **Other Tokens (USDC, DAI, RAIL)**: Displayed in **Decimal Units** followed by the symbol (e.g.,
+  `0.00006 USDC`).
+  - This represents the exact amount of token charged per unit of gas.
+
+### Cost Calculation Example
+
+If a transaction requires **200,000 Gas**:
+
+1.  **Native Token (e.g., 25 Gwei)**:
+    - Calculation: `200,000 * 25 Gwei`
+    - Total: `5,000,000 Gwei` (or `0.005 ETH`)
+
+2.  **Stablecoin (e.g., 0.00006 USDC)**:
+    - Calculation: `200,000 * 0.00006 USDC`
+    - Total: `12.00 USDC`
 
 ## Development
 
