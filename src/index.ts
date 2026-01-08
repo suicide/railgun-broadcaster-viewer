@@ -12,7 +12,6 @@ const program = new Command();
 const DEFAULT_CHAIN_ID = 1; // Ethereum Mainnet
 const DEFAULT_CHAIN_TYPE = 0; // EVM
 const DEFAULT_REFRESH = 10000; // 10 seconds
-// Placeholder key - user should provide real one
 const DEFAULT_SIGNER =
   '0zk1qyzgh9ctuxm6d06gmax39xutjgrawdsljtv80lqnjtqp3exxayuf0rv7j6fe3z53laetcl9u3cma0q9k4npgy8c8ga4h6mx83v09m8ewctsekw4a079dcl5sw4k';
 
@@ -53,14 +52,6 @@ program
     if (options.chainId) config.chainId = options.chainId;
     if (options.signer) config.trustedFeeSigner = options.signer;
     if (options.refresh) config.refreshInterval = options.refresh;
-
-    if (config.trustedFeeSigner === DEFAULT_SIGNER) {
-      console.warn(
-        chalk.yellow(
-          'WARNING: Using placeholder Trusted Fee Signer. No valid fees will be found unless you provide a real key via --signer or config.'
-        )
-      );
-    }
 
     const monitor = new BroadcasterMonitor(config);
 
