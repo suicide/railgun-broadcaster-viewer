@@ -1,25 +1,21 @@
 import Table from 'cli-table3';
 import chalk from 'chalk';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
-import {
-  TokenAddressEthereum,
-  TokenAddressBSC,
-  TokenAddressPolygonPOS,
-  TokenAddressArbitrum,
-} from './tokens';
+import { getTokenName, isChainNativeToken, getTokenDecimals } from './tokens';
+import { formatUnits } from 'ethers';
 
 export function createBroadcasterTable(broadcasters: SelectedBroadcaster[], chainId: number) {
   const table = new Table({
     head: [
       chalk.cyan('Railgun Address'),
       chalk.cyan('Token'),
-      chalk.cyan('Fee'),
+      chalk.cyan('Gas Price'),
       chalk.cyan('Exp.'),
       chalk.cyan('Rel.'),
       chalk.cyan('Wallets'),
       chalk.cyan('Relay Adapt'),
     ],
-    colWidths: [35, 30, 15, 10, 8, 9, 20],
+    colWidths: [35, 30, 20, 10, 8, 9, 20],
   });
 
   broadcasters.forEach((b) => {
@@ -34,10 +30,33 @@ export function createBroadcasterTable(broadcasters: SelectedBroadcaster[], chai
     const reliability = Math.round(b.tokenFee.reliability * 100) + '%';
     const relayAdapt = truncateMiddle(b.tokenFee.relayAdapt, 18);
 
+    // Format Fee
+    const decimals = getTokenDecimals(chainId, b.tokenAddress);
+    const feeRaw = b.tokenFee.feePerUnitGas;
+    let feeFormatted = '';
+
+    if (isChainNativeToken(chainId, b.tokenAddress)) {
+      // 1 Gwei = 1e9 Wei.
+      const feeGwei = parseFloat(formatUnits(feeRaw, 9));
+      feeFormatted = `${feeGwei.toFixed(2)} Gwei`;
+    } else {
+      // For other tokens, show the decimal value + Symbol
+      const val = parseFloat(formatUnits(feeRaw, decimals));
+      let valStr = '';
+      if (val === 0) {
+        valStr = '0';
+      } else if (val < 0.0001) {
+        valStr = val.toExponential(2);
+      } else {
+        valStr = val.toFixed(6).replace(/\.?0+$/, '');
+      }
+      feeFormatted = `${valStr} ${tokenName || ''}`;
+    }
+
     table.push([
       address,
       token,
-      chalk.green(b.tokenFee.feePerUnitGas.toString()),
+      chalk.green(feeFormatted),
       new Date(b.tokenFee.expiration).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
@@ -49,27 +68,6 @@ export function createBroadcasterTable(broadcasters: SelectedBroadcaster[], chai
   });
 
   return table.toString();
-}
-
-function getTokenName(chainId: number, address: string): string | undefined {
-  const normalizedAddress = address.toLowerCase();
-
-  const findToken = (enumObj: any) => {
-    return Object.keys(enumObj).find((key) => enumObj[key].toLowerCase() === normalizedAddress);
-  };
-
-  switch (chainId) {
-    case 1: // Ethereum
-      return findToken(TokenAddressEthereum);
-    case 56: // BSC
-      return findToken(TokenAddressBSC);
-    case 137: // Polygon
-      return findToken(TokenAddressPolygonPOS);
-    case 42161: // Arbitrum
-      return findToken(TokenAddressArbitrum);
-    default:
-      return undefined;
-  }
 }
 
 function truncateMiddle(text: string, maxLength: number): string {

@@ -73,6 +73,49 @@ Run with config:
 npm start -- --config config.json
 ```
 
+## Understanding the Output
+
+The tool displays a real-time table of available broadcasters. Here is an explanation of the key
+columns to help you interpret the data:
+
+### Number of Available Wallets (Concurrency)
+
+This column (`Wallets`) indicates the number of separate wallets the broadcaster has available to
+sign and send transactions.
+
+- **Why it matters:** A higher number means the broadcaster can process multiple transactions
+  simultaneously (concurrency). This reduces the chance of your transaction being queued or stuck if
+  the broadcaster is busy serving other users.
+
+### Relay Adapt Contract (Verification)
+
+This column (`Relay Adapt`) shows the address of the Relay Adapt contract used by the broadcaster.
+
+- **Why it matters:** The Relay Adapt contract is a security component that facilitates
+  cross-contract calls from private balances. It verifies that the transaction data is correct and
+  ensures the broadcaster cannot manipulate the transaction's outcome.
+
+### Fee Per Unit Gas (Cost Calculation)
+
+This column (`Gas Price`) displays the price the broadcaster charges for every unit of gas consumed
+by the transaction.
+
+- **Why it matters:** This allows you to calculate the cost-effectiveness of using a specific
+  broadcaster.
+- **How to read it:**
+  - **Gwei (e.g., 25.00 Gwei):** Used for native tokens like ETH, BNB, or MATIC. `1 Gwei = 10^-9`.
+  - **Token Amount (e.g., 0.00006 USDC):** Used for other tokens. This is the exact amount of the
+    token charged per unit of gas.
+
+**Example Calculation:**
+
+If a transaction consumes **200,000 Gas**:
+
+1.  **Scenario A (Native Token)**: Gas Price is `25 Gwei` (0.000000025 ETH).
+    - `Total Fee = 200,000 * 25 Gwei = 5,000,000 Gwei = 0.005 ETH`
+2.  **Scenario B (Stablecoin)**: Gas Price is `0.00006 USDC`.
+    - `Total Fee = 200,000 * 0.00006 USDC = 12 USDC`
+
 ## Development
 
 - **Format Code**:
