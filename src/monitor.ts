@@ -152,7 +152,7 @@ export class BroadcasterMonitor {
     if (this.broadcasters.length === 0) {
       lines.push(chalk.yellow('No broadcasters found yet.'));
     } else {
-      lines.push(createBroadcasterTable(this.broadcasters));
+      lines.push(createBroadcasterTable(this.broadcasters, this.chain.id));
     }
 
     logUpdate(lines.join('\n'));
