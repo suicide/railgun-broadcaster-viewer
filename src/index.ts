@@ -11,7 +11,7 @@ const program = new Command();
 // Default values
 const DEFAULT_CHAIN_ID = 1; // Ethereum Mainnet
 const DEFAULT_CHAIN_TYPE = 0; // EVM
-const DEFAULT_REFRESH = 10000; // 10 seconds
+const DEFAULT_REFRESH = 30000; // 30 seconds
 const DEFAULT_SIGNER =
   '0zk1qyzgh9ctuxm6d06gmax39xutjgrawdsljtv80lqnjtqp3exxayuf0rv7j6fe3z53laetcl9u3cma0q9k4npgy8c8ga4h6mx83v09m8ewctsekw4a079dcl5sw4k';
 
