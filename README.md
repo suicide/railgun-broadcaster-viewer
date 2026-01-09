@@ -41,19 +41,22 @@ You can run the tool using `npm start` (which uses `ts-node`) or by running the 
 ```bash
 # Run with a specific Trusted Fee Signer (Required for valid results)
 npm start -- --signer <YOUR_TRUSTED_SIGNER_PUBLIC_KEY>
+
+# Run on Ethereum Sepolia
+npm start -- --chain-id 11155111 --signer <YOUR_TRUSTED_SIGNER_PUBLIC_KEY>
 ```
 
 ### Command Line Options
 
-| Option                | Description                                             | Default        |
-| --------------------- | ------------------------------------------------------- | -------------- |
-| `-c, --config <path>` | Path to a JSON configuration file                       | None           |
-| `--chain-id <number>` | The Chain ID to monitor                                 | `1` (Ethereum) |
-| `--signer <string>`   | The Trusted Fee Signer Public Key                       | Placeholder    |
-| `--refresh <number>`  | Refresh interval in milliseconds                        | `10000` (10s)  |
-| `--debug`             | Enable debug logging (shows Waku internal logs & peers) | `false`        |
-| `--log-to-file`       | Enable logging to `broadcaster-viewer.log`              | `false`        |
-| `-h, --help`          | Display help information                                |                |
+| Option                | Description                                                          | Default        |
+| --------------------- | -------------------------------------------------------------------- | -------------- |
+| `-c, --config <path>` | Path to a JSON configuration file                                    | None           |
+| `--chain-id <number>` | The Chain ID to monitor (e.g., 1 for Ethereum, 11155111 for Sepolia) | `1` (Ethereum) |
+| `--signer <string>`   | The Trusted Fee Signer Public Key                                    | Placeholder    |
+| `--refresh <number>`  | Refresh interval in milliseconds                                     | `10000` (10s)  |
+| `--debug`             | Enable debug logging (shows Waku internal logs & peers)              | `false`        |
+| `--log-to-file`       | Enable logging to `broadcaster-viewer.log`                           | `false`        |
+| `-h, --help`          | Display help information                                             |                |
 
 ### Log File
 

@@ -58,6 +58,11 @@ const TOKENS: Record<number, Record<string, TokenInfo>> = {
     '0x4d15a3a2286d883af0aa1b3f21367843fac63e07': { symbol: 'TUSD', decimals: 18 },
     '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': { symbol: 'WETH', decimals: 18, isNative: true },
   },
+
+  // Sepolia Testnet (Chain ID 11155111)
+  11155111: {
+    '0xfff9976782d46cc05630d1f6ebab18b2324d6b14': { symbol: 'WETH', decimals: 18, isNative: true },
+  },
 };
 
 export function getTokenName(chainId: number, address: string): string | undefined {
