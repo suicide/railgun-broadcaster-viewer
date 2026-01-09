@@ -40,6 +40,9 @@
               nodejs
               nodePackages.pnpm
               yarn
+
+              podman
+              podman-compose
             ];
           };
         }

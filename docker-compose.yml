@@ -1,0 +1,31 @@
+version: '3.9'
+services:
+  vpn:
+    image: docker.io/qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./vpn-config:/gluetun:Z
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      # Assumes your config file is named 'custom.conf' inside ./vpn-config
+      - OPENVPN_CUSTOM_CONFIG=/gluetun/custom.conf
+    healthcheck:
+      test: ['CMD', 'gluetun', 'health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    network_mode: 'service:vpn'
+    depends_on:
+      - vpn
+    # Example command (adjust flags as needed)
+    command: ['node', 'dist/index.js', '--chain-id', '42161', '--debug']

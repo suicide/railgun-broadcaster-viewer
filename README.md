@@ -148,6 +148,24 @@ If a transaction requires **200,000 Gas**:
     - Calculation: `200,000 * 0.00006 USDC`
     - Total: `12.00 USDC`
 
+## Running with OpenVPN (Gluetun)
+
+This project includes a Docker/Podman Compose setup that routes all traffic through a VPN using
+Gluetun. This is useful for privacy or bypassing network restrictions.
+
+1.  **Configure OpenVPN**: Place your OpenVPN configuration file named `custom.conf` inside the
+    `vpn-config` directory in the project root.
+    - If your `.ovpn` file references external auth files, ensure they are also in that folder and
+      paths are relative (e.g., `./auth.txt`).
+
+    _Note: The `vpn-config` directory is git-ignored to protect your credentials._
+
+2.  **Start the Application**: Run the following command:
+
+    ```bash
+    docker-compose up --build
+    ```
+
 ## Development
 
 - **Format Code**:
