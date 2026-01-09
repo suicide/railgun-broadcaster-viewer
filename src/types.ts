@@ -5,6 +5,7 @@ export interface AppConfig {
   refreshInterval: number;
   tokenAddress?: string; // Optional token to query for specific fees
   debug?: boolean;
+  fileLogging?: boolean;
 }
 
 export interface BroadcasterInfo {

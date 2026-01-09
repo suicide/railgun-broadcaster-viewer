@@ -45,18 +45,28 @@ npm start -- --signer <YOUR_TRUSTED_SIGNER_PUBLIC_KEY>
 
 ### Command Line Options
 
-| Option                | Description                       | Default        |
-| --------------------- | --------------------------------- | -------------- |
-| `-c, --config <path>` | Path to a JSON configuration file | None           |
-| `--chain-id <number>` | The Chain ID to monitor           | `1` (Ethereum) |
-| `--signer <string>`   | The Trusted Fee Signer Public Key | Placeholder    |
-| `--refresh <number>`  | Refresh interval in milliseconds  | `10000` (10s)  |
-| `-h, --help`          | Display help information          |                |
+| Option                | Description                                             | Default        |
+| --------------------- | ------------------------------------------------------- | -------------- |
+| `-c, --config <path>` | Path to a JSON configuration file                       | None           |
+| `--chain-id <number>` | The Chain ID to monitor                                 | `1` (Ethereum) |
+| `--signer <string>`   | The Trusted Fee Signer Public Key                       | Placeholder    |
+| `--refresh <number>`  | Refresh interval in milliseconds                        | `10000` (10s)  |
+| `--debug`             | Enable debug logging (shows Waku internal logs & peers) | `false`        |
+| `--log-to-file`       | Enable logging to `broadcaster-viewer.log`              | `false`        |
+| `-h, --help`          | Display help information                                |                |
+
+### Log File
+
+When `--log-to-file` is used, logs are appended to `broadcaster-viewer.log` in the project root.
+This file is git-ignored and contains plain text logs with timestamps.
 
 ### Configuration File
 
 You can create a `config.json` file to store your settings. A template is provided in
 `config.example.json`.
+
+Note: Debug options (`debug` and `logToFile`) can also be set in the configuration file, although
+using the CLI flags is the primary usage pattern for these features.
 
 ```json
 {

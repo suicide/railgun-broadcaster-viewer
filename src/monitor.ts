@@ -11,6 +11,8 @@ import { AppConfig } from './types';
 import { createBroadcasterTable, formatLogMessage } from './ui';
 import chalk from 'chalk';
 import logUpdate from 'log-update';
+import fs from 'fs';
+import path from 'path';
 
 export class BroadcasterMonitor {
   private config: AppConfig;
@@ -36,6 +38,10 @@ export class BroadcasterMonitor {
   public async start() {
     if (this.isRunning) return;
     this.isRunning = true;
+
+    if (this.config.fileLogging) {
+      this.logToFile(`\n--- New Session Started at ${new Date().toISOString()} ---\n`);
+    }
 
     this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`);
     this.render();
@@ -142,6 +148,22 @@ export class BroadcasterMonitor {
     // Keep only last 8 logs
     if (this.logs.length > 8) {
       this.logs.shift();
+    }
+    this.logToFile(`[${type.toUpperCase()}] ${message}`);
+  }
+
+  private logToFile(message: string) {
+    if (!this.config.fileLogging) return;
+
+    const logPath = path.resolve(process.cwd(), 'broadcaster-viewer.log');
+    const timestamp = new Date().toISOString();
+    const line =
+      message.startsWith('\n') || message.startsWith('---') ? message : `[${timestamp}] ${message}`;
+
+    try {
+      fs.appendFileSync(logPath, line + '\n');
+    } catch (e) {
+      // Ignore file write errors to avoid crashing the monitor
     }
   }
 

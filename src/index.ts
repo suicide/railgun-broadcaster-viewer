@@ -23,6 +23,7 @@ program
   .option('--signer <string>', 'Trusted Fee Signer Public Key')
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
   .option('--debug', 'Enable debug logging')
+  .option('--log-to-file', 'Enable logging to file')
   .action(async (options) => {
     let config: AppConfig = {
       chainType: DEFAULT_CHAIN_TYPE,
@@ -30,6 +31,7 @@ program
       trustedFeeSigner: DEFAULT_SIGNER,
       refreshInterval: DEFAULT_REFRESH,
       debug: options.debug || false,
+      fileLogging: options.logToFile || false,
     };
 
     // Load from config file if present
