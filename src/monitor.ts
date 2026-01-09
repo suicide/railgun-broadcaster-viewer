@@ -1,6 +1,7 @@
 import {
   WakuBroadcasterClient,
   BroadcasterDebugger,
+  BroadcasterOptions,
 } from '@railgun-community/waku-broadcaster-client-node';
 import {
   Chain,
@@ -46,8 +47,9 @@ export class BroadcasterMonitor {
     this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`);
     this.render();
 
-    const broadcasterOptions = {
+    const broadcasterOptions: BroadcasterOptions = {
       trustedFeeSigner: this.config.trustedFeeSigner,
+      useDNSDiscovery: true,
     };
 
     const broadcasterDebugger: BroadcasterDebugger | undefined = this.config.debug
