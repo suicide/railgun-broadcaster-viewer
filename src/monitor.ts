@@ -1,4 +1,7 @@
-import { WakuBroadcasterClient } from '@railgun-community/waku-broadcaster-client-node';
+import {
+  WakuBroadcasterClient,
+  BroadcasterDebugger,
+} from '@railgun-community/waku-broadcaster-client-node';
 import {
   Chain,
   BroadcasterConnectionStatus,
@@ -41,11 +44,19 @@ export class BroadcasterMonitor {
       trustedFeeSigner: this.config.trustedFeeSigner,
     };
 
+    const broadcasterDebugger: BroadcasterDebugger | undefined = this.config.debug
+      ? {
+          log: (msg: string) => this.addLog(`[Waku] ${msg}`, 'info'),
+          error: (err: Error) => this.addLog(`[Waku Error] ${err.message}`, 'error'),
+        }
+      : undefined;
+
     try {
       await WakuBroadcasterClient.start(
         this.chain,
         broadcasterOptions,
-        this.handleStatusUpdate.bind(this)
+        this.handleStatusUpdate.bind(this),
+        broadcasterDebugger
       );
       this.addLog('Waku Client started successfully.', 'success');
       this.render();
@@ -96,6 +107,21 @@ export class BroadcasterMonitor {
         )) || [];
 
       this.lastScanTime = new Date();
+
+      if (this.config.debug) {
+        try {
+          const waku = WakuBroadcasterClient.getWakuCore() as any;
+          if (waku && waku.libp2p) {
+            const connections = waku.libp2p.getConnections();
+            this.addLog(`[Debug] Open Connections: ${connections.length}`, 'info');
+            for (const conn of connections) {
+              this.addLog(`[Debug] Connected to: ${conn.remoteAddr.toString()}`, 'info');
+            }
+          }
+        } catch (e) {
+          // Ignore debug errors
+        }
+      }
 
       try {
         this.meshPeerCount = WakuBroadcasterClient.getMeshPeerCount();

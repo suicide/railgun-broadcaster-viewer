@@ -4,6 +4,7 @@ export interface AppConfig {
   trustedFeeSigner: string;
   refreshInterval: number;
   tokenAddress?: string; // Optional token to query for specific fees
+  debug?: boolean;
 }
 
 export interface BroadcasterInfo {

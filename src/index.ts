@@ -22,12 +22,14 @@ program
   .option('--chain-id <number>', 'Chain ID to monitor', parseInt)
   .option('--signer <string>', 'Trusted Fee Signer Public Key')
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
+  .option('--debug', 'Enable debug logging')
   .action(async (options) => {
     let config: AppConfig = {
       chainType: DEFAULT_CHAIN_TYPE,
       chainId: DEFAULT_CHAIN_ID,
       trustedFeeSigner: DEFAULT_SIGNER,
       refreshInterval: DEFAULT_REFRESH,
+      debug: options.debug || false,
     };
 
     // Load from config file if present
