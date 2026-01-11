@@ -45,12 +45,16 @@ export class BroadcasterMonitor {
     }
 
     this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`);
-    this.render();
 
     const broadcasterOptions: BroadcasterOptions = {
       trustedFeeSigner: this.config.trustedFeeSigner,
       useDNSDiscovery: true,
+      pubSubTopic: this.config.pubSubTopic ?? '/waku/2/rs/1/1',
     };
+
+    this.addLog(`Waku Options: ${JSON.stringify(broadcasterOptions)}`, 'info');
+
+    this.render();
 
     const broadcasterDebugger: BroadcasterDebugger | undefined = this.config.debug
       ? {

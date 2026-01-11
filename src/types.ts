@@ -2,6 +2,7 @@ export interface AppConfig {
   chainType: number;
   chainId: number;
   trustedFeeSigner: string;
+  pubSubTopic?: string;
   refreshInterval: number;
   tokenAddress?: string; // Optional token to query for specific fees
   debug?: boolean;
