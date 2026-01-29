@@ -20,7 +20,7 @@ program
   .description('CLI tool to monitor Railgun Broadcasters on Waku')
   .option('-c, --config <path>', 'Path to config JSON file')
   .option('--chain-id <number>', 'Chain ID to monitor', parseInt)
-  .option('--signer <string>', 'Trusted Fee Signer Public Key')
+  .option('--signer <string>', 'Trusted Fee Signer Public Key (establishes fee baseline)')
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
   .option('--debug', 'Enable debug logging')
   .option('--log-to-file', 'Enable logging to file')

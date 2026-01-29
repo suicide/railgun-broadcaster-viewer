@@ -86,6 +86,34 @@ Run with config:
 npm start -- --config config.json
 ```
 
+## The Trusted Fee Signer
+
+The \`trustedFeeSigner\` is a security configuration setting that establishes a "source of truth"
+for Relayer fees. It protects the client from interacting with Relayers that attempt price gouging
+or malicious spamming by enforcing a strict fee variance.
+
+As it is just a client-side concept, there is no code for it in this broadcaster app. However,
+knowing the concept is relevant for configuration of fees.
+
+### Usage
+
+Accepts a single Railgun wallet public key (string) or a list of keys (string[]).
+
+### How it Works
+
+1.  **Baseline Calculation**: The client listens for fee broadcasts specifically from the configured
+    \`trustedFeeSigner\`(s). If multiple are provided, it calculates an average baseline fee.
+2.  **Variance Enforcement**: When any other Relayer broadcasts a fee, the client compares it
+    against this baseline. The Relayer is only accepted if their fee falls within the allowed
+    variance (Default: -10% to +30% of the trusted baseline).
+3.  **Filtering**: Relayers charging fees outside this window are automatically ignored and excluded
+    from the selection pool.
+
+### Critical Behavior
+
+If \`trustedFeeSigner\` is configured, the client will not select any Relayer until it has received
+at least one valid fee broadcast from a trusted signer to establish the baseline.
+
 ## User Interface Guide
 
 When you run the tool, you will see a real-time dashboard divided into three main sections:

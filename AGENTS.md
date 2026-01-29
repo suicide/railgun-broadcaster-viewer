@@ -35,7 +35,8 @@ peer-to-peer network.
 1.  **TypeScript**: Strict mode is enabled. Ensure all new code is typed correctly.
 2.  **Formatting**: Use `npm run format` (Prettier) before committing.
 3.  **Waku Interaction**: The Waku client requires a "Trusted Fee Signer" public key to validate
-    fees. Without a valid key, the SDK may filter out valid broadcasters.
+    fees and enforce variance limits against price gouging. The client waits for a broadcast from
+    this signer to establish a baseline. Without it, the SDK may filter out valid broadcasters.
 4.  **Logging**: Use the `logStatus` helper in `src/ui.ts` for consistent console logging.
 
 ## Common Tasks
