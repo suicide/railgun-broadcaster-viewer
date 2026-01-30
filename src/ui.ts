@@ -9,7 +9,7 @@ export function createBroadcasterTable(broadcasters: SelectedBroadcaster[], chai
     head: [
       chalk.cyan('Railgun Address'),
       chalk.cyan('Token'),
-      chalk.cyan('Gas Price'),
+      chalk.cyan('Fee'),
       chalk.cyan('Exp.'),
       chalk.cyan('Rel.'),
       chalk.cyan('Wallets'),

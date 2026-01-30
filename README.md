@@ -145,36 +145,41 @@ The main table lists all active broadcasters found on the network.
 | :------------------ | :----------------------------------------------------------------------------------------------- |
 | **Railgun Address** | The truncated 0zk-address of the broadcaster.                                                    |
 | **Token**           | The token accepted for fees (e.g., `WETH`, `USDC`). Includes the truncated contract address.     |
-| **Gas Price**       | The cost per unit of gas charged by the broadcaster (see "Understanding Gas Prices" below).      |
+| **Fee**             | The cost per unit of gas charged by the broadcaster (see "Understanding Fees" below).            |
 | **Exp.**            | The time when the current fee quote expires.                                                     |
 | **Rel.**            | **Reliability Score** (0-100%). Indicates the historical uptime/success rate of the broadcaster. |
 | **Wallets**         | **Available Wallets**. The number of concurrent transactions the broadcaster can process.        |
 | **Relay Adapt**     | The address of the Relay Adapt contract used for cross-contract verification.                    |
 
-## Understanding Gas Prices
+## Understanding Fees
 
-The **Gas Price** column displays the rate charged by the broadcaster. It is formatted differently
-based on the token type to maximize readability:
+The published fees represent the Broadcaster's exchange rate for accepting a specific token in
+exchange for paying gas.
 
-- **Native Tokens (ETH, BNB, MATIC)**: Displayed in **Gwei** (e.g., `25.00 Gwei`).
-  - `1 Gwei = 10^-9 ETH`.
-  - This matches standard gas price tracking tools like Etherscan.
+### Meaning
 
-- **Other Tokens (USDC, DAI, RAIL)**: Displayed in **Decimal Units** followed by the symbol (e.g.,
-  `0.00006 USDC`).
-  - This represents the exact amount of token charged per unit of gas.
+The fee value indicates how much of the Fee Token (e.g., USDC) is required to cover 1 full unit of
+the network's Gas Token (e.g., 1 ETH, 1 MATIC, 1 BNB).
 
-### Cost Calculation Example
+- **Logic:** `Fee = (Gas Token Price / Fee Token Price) * Profit Margin`
+- **Example:** If ETH is $2000 and USDC is $1, and the broadcaster wants a 10% fee/profit buffer,
+  the fee will represent ~2200 USDC per 1 ETH.
 
-If a transaction requires **200,000 Gas**:
+### Unit
 
-1.  **Native Token (e.g., 25 Gwei)**:
-    - Calculation: `200,000 * 25 Gwei`
-    - Total: `5,000,000 Gwei` (or `0.005 ETH`)
+The fees are published as BigInt integers representing the smallest unit (base units) of the Fee
+Token.
 
-2.  **Stablecoin (e.g., 0.00006 USDC)**:
-    - Calculation: `200,000 * 0.00006 USDC`
-    - Total: `12.00 USDC`
+- For USDC (6 decimals): A fee of `2200000000` means `2,200.000000` USDC per 1 ETH.
+- For DAI (18 decimals): A fee of `2200000000000000000000` means `2,200.000000000000000000` DAI per
+  1 ETH.
+
+### How Clients Use It
+
+When a client (wallet) wants to send a transaction, they estimate the gas cost (e.g., 0.005 ETH) and
+multiply it by this fee to determine how much they must pay the broadcaster:
+
+`Payment = Gas Limit (in ETH) * Published Fee (USDC per ETH)`
 
 ## Running with OpenVPN (Gluetun)
 
