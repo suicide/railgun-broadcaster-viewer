@@ -47,7 +47,7 @@ export class BroadcasterMonitor {
     this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`);
 
     const broadcasterOptions: BroadcasterOptions = {
-      trustedFeeSigner: this.config.trustedFeeSigner,
+      trustedFeeSigner: this.config.trustedFeeSigner ?? '',
       useDNSDiscovery: true,
       pubSubTopic: this.config.pubSubTopic ?? '/waku/2/rs/1/1',
     };
@@ -181,9 +181,12 @@ export class BroadcasterMonitor {
     lines.push(
       `${chalk.bold('Status:')} ${this.connectionStatus}  |  ${chalk.bold('Mesh Peers:')} ${this.meshPeerCount}`
     );
-    lines.push(
-      `${chalk.bold('Trusted Signer:')} ${this.config.trustedFeeSigner.substring(0, 10)}...`
-    );
+
+    const signerDisplay = this.config.trustedFeeSigner
+      ? `${this.config.trustedFeeSigner.substring(0, 10)}...`
+      : chalk.yellow('Disabled (No protection)');
+
+    lines.push(`${chalk.bold('Trusted Signer:')} ${signerDisplay}`);
 
     if (this.lastScanTime) {
       lines.push(`${chalk.bold('Last Scan:')} ${this.lastScanTime.toLocaleTimeString()}`);

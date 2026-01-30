@@ -21,6 +21,7 @@ program
   .option('-c, --config <path>', 'Path to config JSON file')
   .option('--chain-id <number>', 'Chain ID to monitor', parseInt)
   .option('--signer <string>', 'Trusted Fee Signer Public Key (establishes fee baseline)')
+  .option('--no-signer', 'Disable Trusted Fee Signer (CAUTION: Removes fee protections)')
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
   .option('--debug', 'Enable debug logging')
   .option('--log-to-file', 'Enable logging to file')
@@ -54,7 +55,12 @@ program
 
     // Override with CLI args
     if (options.chainId) config.chainId = options.chainId;
-    if (options.signer) config.trustedFeeSigner = options.signer;
+    if (options.signer) {
+      config.trustedFeeSigner = options.signer;
+    } else if (options.signer === false) {
+      // --no-signer passed
+      config.trustedFeeSigner = undefined;
+    }
     if (options.refresh) config.refreshInterval = options.refresh;
 
     const monitor = new BroadcasterMonitor(config);

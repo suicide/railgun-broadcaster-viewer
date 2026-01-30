@@ -6,7 +6,7 @@ export interface AppConfig {
    * Protects against price gouging by enforcing strict fee variance (-10% to +30%).
    * The client waits for a broadcast from this signer to establish a baseline.
    */
-  trustedFeeSigner: string;
+  trustedFeeSigner?: string;
   pubSubTopic?: string;
   refreshInterval: number;
   tokenAddress?: string; // Optional token to query for specific fees
