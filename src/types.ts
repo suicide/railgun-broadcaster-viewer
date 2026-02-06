@@ -10,6 +10,7 @@ export interface AppConfig {
   pubSubTopic?: string;
   refreshInterval: number;
   tokenAddress?: string; // Optional token to query for specific fees
+  filterNative?: boolean;
   debug?: boolean;
   fileLogging?: boolean;
 }

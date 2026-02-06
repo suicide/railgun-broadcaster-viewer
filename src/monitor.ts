@@ -10,6 +10,7 @@ import {
 } from '@railgun-community/shared-models';
 import { AppConfig } from './types';
 import { createBroadcasterTable, formatLogMessage } from './ui';
+import { isChainNativeToken } from './tokens';
 import chalk from 'chalk';
 import logUpdate from 'log-update';
 import fs from 'fs';
@@ -117,6 +118,12 @@ export class BroadcasterMonitor {
           this.chain,
           false // useRelayAdapt
         )) || [];
+
+      if (this.config.filterNative) {
+        this.broadcasters = this.broadcasters.filter((b) =>
+          isChainNativeToken(this.chain.id, b.tokenAddress)
+        );
+      }
 
       this.lastScanTime = new Date();
 

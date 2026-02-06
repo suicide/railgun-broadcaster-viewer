@@ -23,6 +23,7 @@ program
   .option('--signer <string>', 'Trusted Fee Signer Public Key (establishes fee baseline)')
   .option('--no-signer', 'Disable Trusted Fee Signer (CAUTION: Removes fee protections)')
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
+  .option('--native-only', 'Filter to show only native token fees')
   .option('--debug', 'Enable debug logging')
   .option('--log-to-file', 'Enable logging to file')
   .action(async (options) => {
@@ -31,6 +32,7 @@ program
       chainId: DEFAULT_CHAIN_ID,
       trustedFeeSigner: DEFAULT_SIGNER,
       refreshInterval: DEFAULT_REFRESH,
+      filterNative: options.nativeOnly || false,
       debug: options.debug || false,
       fileLogging: options.logToFile || false,
     };
