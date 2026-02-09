@@ -16,6 +16,7 @@ export function createBroadcasterTable(broadcasters: SelectedBroadcaster[], chai
       chalk.cyan('Relay Adapt'),
     ],
     colWidths: [35, 30, 20, 10, 8, 9, 20],
+    chars: { mid: '', 'left-mid': '', 'mid-mid': '', 'right-mid': '' },
   });
 
   broadcasters.forEach((b) => {
