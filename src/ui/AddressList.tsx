@@ -29,7 +29,11 @@ export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }
     if (selectedIndex >= uniqueAddresses.length) {
       setSelectedIndex(Math.max(0, uniqueAddresses.length - 1));
     }
-  }, [uniqueAddresses.length]);
+    // Adjust offset if needed
+    if (offset > Math.max(0, uniqueAddresses.length - limit)) {
+      setOffset(Math.max(0, uniqueAddresses.length - limit));
+    }
+  }, [uniqueAddresses.length, limit, offset, selectedIndex]);
 
   useInput((input, key) => {
     if (!isFocused) return;
@@ -60,6 +64,21 @@ export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }
       const prevIndex = Math.max(0, selectedIndex - limit);
       setSelectedIndex(prevIndex);
       setOffset(Math.max(0, offset - limit));
+    }
+
+    if (key.ctrl) {
+      if (input === 'd') {
+        const halfPage = Math.floor(limit / 2);
+        const nextIndex = Math.min(uniqueAddresses.length - 1, selectedIndex + halfPage);
+        setSelectedIndex(nextIndex);
+        setOffset(Math.min(Math.max(0, uniqueAddresses.length - limit), offset + halfPage));
+      }
+      if (input === 'u') {
+        const halfPage = Math.floor(limit / 2);
+        const prevIndex = Math.max(0, selectedIndex - halfPage);
+        setSelectedIndex(prevIndex);
+        setOffset(Math.max(0, offset - halfPage));
+      }
     }
   });
 

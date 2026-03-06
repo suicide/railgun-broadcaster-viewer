@@ -40,6 +40,41 @@ export const LogPanel: React.FC<Props> = ({ logs, isFocused }) => {
         setAutoScroll(true);
       }
     }
+
+    if (key.pageUp) {
+      setAutoScroll(false);
+      const nextOffset = Math.max(0, offset - limit);
+      setOffset(nextOffset);
+    }
+
+    if (key.pageDown) {
+      const maxOffset = Math.max(0, logs.length - limit);
+      const nextOffset = Math.min(maxOffset, offset + limit);
+      setOffset(nextOffset);
+
+      if (nextOffset >= maxOffset) {
+        setAutoScroll(true);
+      }
+    }
+
+    if (key.ctrl) {
+      if (input === 'u') {
+        setAutoScroll(false);
+        const halfPage = Math.floor(limit / 2);
+        const nextOffset = Math.max(0, offset - halfPage);
+        setOffset(nextOffset);
+      }
+      if (input === 'd') {
+        const maxOffset = Math.max(0, logs.length - limit);
+        const halfPage = Math.floor(limit / 2);
+        const nextOffset = Math.min(maxOffset, offset + halfPage);
+        setOffset(nextOffset);
+
+        if (nextOffset >= maxOffset) {
+          setAutoScroll(true);
+        }
+      }
+    }
   });
 
   const visible = logs.slice(offset, offset + limit);

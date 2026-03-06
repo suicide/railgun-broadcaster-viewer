@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
+import TextInput from 'ink-text-input';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { formatUnits } from 'ethers';
 import { getTokenName, isChainNativeToken, getTokenDecimals } from '../tokens.js';
@@ -11,6 +12,8 @@ interface Props {
   height: number;
 }
 
+type SortKey = 'address' | 'token' | 'fee' | 'expiration' | 'reliability' | 'wallets' | 'adapt';
+
 const truncateMiddle = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   const sideLength = Math.floor((maxLength - 3) / 2);
@@ -20,22 +23,125 @@ const truncateMiddle = (text: string, maxLength: number): string => {
 export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFocused, height }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [sortKey, setSortKey] = useState<SortKey>('fee');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [filterMode, setFilterMode] = useState(false);
+  const [filterQuery, setFilterQuery] = useState('');
 
-  // Calculate visible rows. Height includes borders (2) + Header (1) + Footer (1)
-  const limit = Math.max(1, height - 4);
+  // Calculate visible rows. Height includes borders (2) + Header (1) + Footer (1) or Filter (3)
+  const availableHeight = height - (filterMode ? 6 : 4);
+  const limit = Math.max(1, availableHeight);
+
+  // Filter and Sort
+  const processedBroadcasters = useMemo(() => {
+    let filtered = broadcasters;
+    if (filterQuery) {
+      const lowerQuery = filterQuery.toLowerCase();
+      filtered = broadcasters.filter(
+        (b) =>
+          b.railgunAddress.toLowerCase().includes(lowerQuery) ||
+          b.tokenAddress.toLowerCase().includes(lowerQuery) ||
+          (getTokenName(chainId, b.tokenAddress) || '').toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    return filtered.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (sortKey) {
+        case 'address':
+          valA = a.railgunAddress;
+          valB = b.railgunAddress;
+          break;
+        case 'token':
+          valA = getTokenName(chainId, a.tokenAddress) || a.tokenAddress;
+          valB = getTokenName(chainId, b.tokenAddress) || b.tokenAddress;
+          break;
+        case 'fee':
+          try {
+            valA = BigInt(a.tokenFee.feePerUnitGas ?? 0);
+          } catch {
+            valA = BigInt(0);
+          }
+          try {
+            valB = BigInt(b.tokenFee.feePerUnitGas ?? 0);
+          } catch {
+            valB = BigInt(0);
+          }
+          break;
+        case 'expiration':
+          valA = a.tokenFee.expiration;
+          valB = b.tokenFee.expiration;
+          break;
+        case 'reliability':
+          valA = a.tokenFee.reliability;
+          valB = b.tokenFee.reliability;
+          break;
+        case 'wallets':
+          valA = a.tokenFee.availableWallets;
+          valB = b.tokenFee.availableWallets;
+          break;
+        case 'adapt':
+          valA = a.tokenFee.relayAdapt;
+          valB = b.tokenFee.relayAdapt;
+          break;
+      }
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [broadcasters, filterQuery, sortKey, sortDirection, chainId]);
 
   // Reset/adjust selection if list shrinks
   useEffect(() => {
-    if (selectedIndex >= broadcasters.length) {
-      setSelectedIndex(Math.max(0, broadcasters.length - 1));
+    if (selectedIndex >= processedBroadcasters.length) {
+      setSelectedIndex(Math.max(0, processedBroadcasters.length - 1));
+      // Adjust offset if needed
+      if (offset > Math.max(0, processedBroadcasters.length - limit)) {
+        setOffset(Math.max(0, processedBroadcasters.length - limit));
+      }
     }
-  }, [broadcasters.length]);
+  }, [processedBroadcasters.length, limit]);
 
   useInput((input, key) => {
     if (!isFocused) return;
 
+    if (filterMode) {
+      if (key.escape || key.return) {
+        setFilterMode(false);
+        // If query is empty, maybe clear it? For now keep it.
+      }
+      return;
+    }
+
+    if (input === '/') {
+      setFilterMode(true);
+      return;
+    }
+
+    // Sorting keys
+    const handleSort = (key: SortKey) => {
+      if (sortKey === key) {
+        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      } else {
+        setSortKey(key);
+        setSortDirection('asc');
+      }
+    };
+
+    if (input === '1') handleSort('address');
+    if (input === '2') handleSort('token');
+    if (input === '3') handleSort('fee');
+    if (input === '4') handleSort('expiration');
+    if (input === '5') handleSort('reliability');
+    if (input === '6') handleSort('wallets');
+    if (input === '7') handleSort('adapt');
+
+    // Navigation
     if (key.downArrow || input === 'j') {
-      const nextIndex = Math.min(broadcasters.length - 1, selectedIndex + 1);
+      const nextIndex = Math.min(processedBroadcasters.length - 1, selectedIndex + 1);
       setSelectedIndex(nextIndex);
       if (nextIndex >= offset + limit) {
         setOffset(nextIndex - limit + 1);
@@ -51,15 +157,30 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
     }
 
     if (key.pageDown) {
-      const nextIndex = Math.min(broadcasters.length - 1, selectedIndex + limit);
+      const nextIndex = Math.min(processedBroadcasters.length - 1, selectedIndex + limit);
       setSelectedIndex(nextIndex);
-      setOffset(Math.min(Math.max(0, broadcasters.length - limit), offset + limit));
+      setOffset(Math.min(Math.max(0, processedBroadcasters.length - limit), offset + limit));
     }
 
     if (key.pageUp) {
       const prevIndex = Math.max(0, selectedIndex - limit);
       setSelectedIndex(prevIndex);
       setOffset(Math.max(0, offset - limit));
+    }
+
+    if (key.ctrl) {
+      if (input === 'd') {
+        const halfPage = Math.floor(limit / 2);
+        const nextIndex = Math.min(processedBroadcasters.length - 1, selectedIndex + halfPage);
+        setSelectedIndex(nextIndex);
+        setOffset(Math.min(Math.max(0, processedBroadcasters.length - limit), offset + halfPage));
+      }
+      if (input === 'u') {
+        const halfPage = Math.floor(limit / 2);
+        const prevIndex = Math.max(0, selectedIndex - halfPage);
+        setSelectedIndex(prevIndex);
+        setOffset(Math.max(0, offset - halfPage));
+      }
     }
   });
 
@@ -77,11 +198,19 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
     );
   }
 
-  const visible = broadcasters.slice(offset, offset + limit);
-  const scrollPercent = Math.min(
-    100,
-    Math.max(0, Math.round((offset / (broadcasters.length - limit)) * 100))
-  );
+  const visible = processedBroadcasters.slice(offset, offset + limit);
+
+  const renderHeader = (label: string, key: SortKey, width: string) => {
+    const isSorting = sortKey === key;
+    const arrow = isSorting ? (sortDirection === 'asc' ? '↑' : '↓') : '';
+    return (
+      <Box width={width}>
+        <Text bold color={isSorting ? 'green' : 'cyan'}>
+          {label} {arrow}
+        </Text>
+      </Box>
+    );
+  };
 
   return (
     <Box
@@ -92,41 +221,13 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
     >
       {/* Header */}
       <Box borderBottom={false} borderTop={false} borderLeft={false} borderRight={false}>
-        <Box width="20%">
-          <Text bold color="cyan">
-            Address
-          </Text>
-        </Box>
-        <Box width="20%">
-          <Text bold color="cyan">
-            Token
-          </Text>
-        </Box>
-        <Box width="20%">
-          <Text bold color="cyan">
-            Fee
-          </Text>
-        </Box>
-        <Box width="10%">
-          <Text bold color="cyan">
-            Exp.
-          </Text>
-        </Box>
-        <Box width="10%">
-          <Text bold color="cyan">
-            Rel.
-          </Text>
-        </Box>
-        <Box width="10%">
-          <Text bold color="cyan">
-            Wallets
-          </Text>
-        </Box>
-        <Box width="10%">
-          <Text bold color="cyan">
-            Adapt
-          </Text>
-        </Box>
+        {renderHeader('Address (1)', 'address', '20%')}
+        {renderHeader('Token (2)', 'token', '20%')}
+        {renderHeader('Fee (3)', 'fee', '20%')}
+        {renderHeader('Exp. (4)', 'expiration', '10%')}
+        {renderHeader('Rel. (5)', 'reliability', '10%')}
+        {renderHeader('Wallets (6)', 'wallets', '10%')}
+        {renderHeader('Adapt (7)', 'adapt', '10%')}
       </Box>
 
       {/* Rows */}
@@ -232,15 +333,30 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
         })}
       </Box>
 
-      {/* Scroll Indicator */}
-      <Box justifyContent="center" height={1}>
-        {broadcasters.length > limit ? (
-          <Text color="gray">
-            {offset > 0 ? '↑ Scroll Up ' : ''}
-            {offset + limit < broadcasters.length ? '↓ Scroll Down' : ''}
-          </Text>
-        ) : null}
-      </Box>
+      {/* Filter Input */}
+      {filterMode && (
+        <Box borderStyle="single" borderColor="yellow" height={3}>
+          <Text>Filter: </Text>
+          <TextInput
+            value={filterQuery}
+            onChange={setFilterQuery}
+            focus={filterMode && isFocused}
+            placeholder="Address, Token, or Name"
+          />
+        </Box>
+      )}
+
+      {/* Scroll Indicator (only if not filtering or filter bar is outside this box logic) */}
+      {!filterMode && (
+        <Box justifyContent="center" height={1}>
+          {processedBroadcasters.length > limit ? (
+            <Text color="gray">
+              {offset > 0 ? '↑ Scroll Up ' : ''}
+              {offset + limit < processedBroadcasters.length ? '↓ Scroll Down' : ''}
+            </Text>
+          ) : null}
+        </Box>
+      )}
     </Box>
   );
 };
