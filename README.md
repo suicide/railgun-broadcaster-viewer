@@ -17,7 +17,6 @@ connectivity, and reliability scores across different chains.
 - **Deep Inspection**: View detailed fees, expiration times, and token support.
 - **Log Inspection**: Scrollable, pausable log panel for debugging connection events.
 - **Cross-Chain**: Configurable for Ethereum, Polygon, Arbitrum, Sepolia, etc.
-- **Privacy First**: Includes OpenVPN (Gluetun) support via Docker.
 
 ## Installation
 
@@ -95,16 +94,6 @@ Options can be passed via CLI flags or a `config.json` file.
   - _Calculation_: `Fee = (Gas Token Price / Fee Token Price) * (1 + Profit Margin)`
 - **Reliability**: Historical uptime/success rate (0-100%).
 - **Wallets**: Number of concurrent transactions the broadcaster can process.
-
-## Docker & VPN
-
-To run through a VPN (useful for bypassing network restrictions or ISP blocks on p2p traffic):
-
-1.  Place your OpenVPN config in `vpn-config/custom.conf`.
-2.  Run:
-    ```bash
-    docker-compose up --build
-    ```
 
 ## License
 
