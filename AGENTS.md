@@ -9,15 +9,21 @@ This is a CLI tool written in TypeScript that interfaces with the
 developers and node operators to visualize the state of Railgun Relayers (Broadcasters) on the Waku
 peer-to-peer network.
 
+It uses **Ink** (React for CLI) to provide a rich, interactive Terminal User Interface (TUI).
+
 ## Architecture
 
-- **Entry Point**: `src/index.ts` - Handles CLI argument parsing using `commander` and
-  initialization.
+- **Entry Point**: `src/index.ts` - Handles CLI argument parsing using `commander` and mounts the
+  Ink React application.
 - **Core Logic**: `src/monitor.ts` - Manages the `WakuBroadcasterClient` lifecycle.
   - Initializes the Waku client.
   - Polls for broadcasters using `WakuBroadcasterClient.findAllBroadcastersForChain`.
-  - Updates the UI loop.
-- **UI**: `src/ui.ts` - Uses `cli-table3` and `chalk` to render formatted output to the console.
+  - Extends `EventEmitter` to push updates (`update`, `log`, `status`) to the UI.
+- **UI**: `src/ui/` - React components using `ink`.
+  - `App.tsx`: Main container, layout manager, and global key handler.
+  - `BroadcasterTable.tsx`: Sortable, filterable table of broadcasters.
+  - `AddressList.tsx`: Selectable sidebar of unique addresses.
+  - `LogPanel.tsx`: Scrollable log window.
 - **Configuration**: `src/types.ts` defines the `AppConfig` interface. Configuration is merged from
   defaults, JSON file, and CLI args.
 
@@ -25,23 +31,26 @@ peer-to-peer network.
 
 - **@railgun-community/waku-broadcaster-client-node**: The core SDK for interacting with the Railgun
   Waku network.
-- **@railgun-community/shared-models**: Types and shared utilities (e.g., `Chain`, `Broadcaster`).
+- **ink**: React-based CLI renderer.
+- **react**: UI component library.
 - **commander**: CLI framework.
-- **cli-table3**: Terminal table rendering.
-- **chalk**: Terminal string styling (v4 used for CommonJS compatibility).
+- **chalk**: Terminal string styling.
 
 ## Development Guidelines
 
 1.  **TypeScript**: Strict mode is enabled. Ensure all new code is typed correctly.
 2.  **Formatting**: Use `npm run format` (Prettier) before committing.
-3.  **Waku Interaction**: The Waku client requires a "Trusted Fee Signer" public key to validate
-    fees and enforce variance limits against price gouging. The client waits for a broadcast from
-    this signer to establish a baseline. Without it, the SDK may filter out valid broadcasters.
-4.  **Logging**: Use the `logStatus` helper in `src/ui.ts` for consistent console logging.
+3.  **Waku Interaction**: The Waku client typically requires a "Trusted Fee Signer" public key to
+    validate fees and enforce variance limits against price gouging. The client waits for a
+    broadcast from this signer to establish a baseline. Without it (or the `--no-signer` flag), the
+    SDK may filter out valid broadcasters.
+4.  **State Management**: The `BroadcasterMonitor` class emits events. The React UI subscribes to
+    these events in `useEffect` hooks to update local state.
 
 ## Common Tasks
 
-- **Adding new columns**: Update `createBroadcasterTable` in `src/ui.ts`.
+- **Adding new columns**: Update `src/ui/BroadcasterTable.tsx` columns definition.
 - **Changing polling logic**: Modify the `scan` method in `src/monitor.ts`.
 - **Updating SDK**: Check for breaking changes in `@railgun-community/shared-models` if upgrading
   dependencies.
+- **Logging**: Emit a 'log' event from the monitor: `this.emit('log', 'message')`.
