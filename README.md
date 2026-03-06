@@ -40,22 +40,31 @@ connectivity, and reliability scores across different chains.
 
 ## Quick Start
 
-Start the viewer with a Trusted Fee Signer (required to validate fees against a baseline):
+Using a Trusted Fee Signer is recommended to validate fees against a baseline and prevent price
+gouging.
 
 ```bash
-# Ethereum Mainnet (Default)
-npm start -- --signer <TRUSTED_SIGNER_PUBLIC_KEY>
+# Ethereum Mainnet (No Signer - Default)
+# CAUTION: This removes fee protections and displays all broadcasters
+npm start
 
-# Ethereum Sepolia (Chain ID: 11155111)
-npm start -- --chain-id 11155111 --signer <TRUSTED_SIGNER_PUBLIC_KEY>
+# Use Community Trusted Signers
+npm start -- --railway    # Use Railway Wallet signers
+npm start -- --terminal   # Use Terminal Wallet signers
+npm start -- --railway --terminal # Use both
+
+# Custom Signer
+npm start -- --signer <TRUSTED_SIGNER_PUBLIC_KEY>
 ```
 
 ### Trusted Fee Signers (Community)
 
-You can use these known public keys for testing:
+The tool includes built-in public keys for major community wallets:
 
-- `0zk1qyjyhqjdkqd9qxusgj092ppxl92plvrk3s3cna9u73h5rwt0ghxvfrv7j6fe3z53l7lrzyqw5te7ku5v8fsrpeadzvpkudgawjv9dg08htj7z3mph5kd6dw50jc`
-- `0zk1qyzgh9ctuxm6d06gmax39xutjgrawdsljtv80lqnjtqp3exxayuf0rv7j6fe3z53laetcl9u3cma0q9k4npgy8c8ga4h6mx83v09m8ewctsekw4a079dcl5sw4k`
+- **Railway Wallet**: `--railway` (Highlighted in Cyan)
+- **Terminal Wallet**: `--terminal` (Highlighted in Magenta)
+
+Broadcasters matching these signers are highlighted in the UI for easy identification.
 
 ## Keyboard Controls
 
@@ -79,14 +88,16 @@ You can use these known public keys for testing:
 
 Options can be passed via CLI flags or a `config.json` file.
 
-| Option           | Description                           | Default        |
-| :--------------- | :------------------------------------ | :------------- |
-| `--chain-id <n>` | Chain ID to monitor                   | `1` (Ethereum) |
-| `--signer <key>` | Trusted Fee Signer Public Key         | (Required)     |
-| `--no-signer`    | Run without a Trusted Fee Signer      | `false`        |
-| `--refresh <ms>` | Refresh interval in milliseconds      | `10000`        |
-| `--debug`        | Enable verbose Waku debugging         | `false`        |
-| `--log-to-file`  | Save logs to `broadcaster-viewer.log` | `false`        |
+| Option           | Description                                | Default |
+| :--------------- | :----------------------------------------- | :------ |
+| `--chain-id <n>` | Chain ID to monitor                        | `1`     |
+| `--railway`      | Add Railway Wallet trusted signers         | `false` |
+| `--terminal`     | Add Terminal Wallet trusted signers        | `false` |
+| `--signer <key>` | Custom Trusted Fee Signer Key (repeatable) | `[]`    |
+| `--no-signer`    | Run without any Trusted Fee Signer         | `true`  |
+| `--refresh <ms>` | Refresh interval in milliseconds           | `30000` |
+| `--debug`        | Enable verbose Waku debugging              | `false` |
+| `--log-to-file`  | Save logs to `broadcaster-viewer.log`      | `false` |
 
 ## Understanding the Data
 

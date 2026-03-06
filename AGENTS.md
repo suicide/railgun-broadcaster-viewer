@@ -42,8 +42,9 @@ It uses **Ink** (React for CLI) to provide a rich, interactive Terminal User Int
 2.  **Formatting**: Use `npm run format` (Prettier) before committing.
 3.  **Waku Interaction**: The Waku client typically requires a "Trusted Fee Signer" public key to
     validate fees and enforce variance limits against price gouging. The client waits for a
-    broadcast from this signer to establish a baseline. Without it (or the `--no-signer` flag), the
-    SDK may filter out valid broadcasters.
+    broadcast from this signer to establish a baseline. By default, the viewer starts without a
+    signer (`--no-signer`), showing all broadcasters but without fee validation. Trusted signers can
+    be added via flags (`--signer`, `--railway`, `--terminal`).
 4.  **State Management**: The `BroadcasterMonitor` class emits events. The React UI subscribes to
     these events in `useEffect` hooks to update local state.
 

@@ -8,6 +8,7 @@ import { AppConfig } from './types.js';
 import { BroadcasterMonitor } from './monitor.js';
 import { App } from './ui/App.js';
 import chalk from 'chalk';
+import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from './signers.js';
 
 const program = new Command();
 
@@ -15,16 +16,19 @@ const program = new Command();
 const DEFAULT_CHAIN_ID = 1; // Ethereum Mainnet
 const DEFAULT_CHAIN_TYPE = 0; // EVM
 const DEFAULT_REFRESH = 30000; // 30 seconds
-const DEFAULT_SIGNER =
-  '0zk1qyzgh9ctuxm6d06gmax39xutjgrawdsljtv80lqnjtqp3exxayuf0rv7j6fe3z53laetcl9u3cma0q9k4npgy8c8ga4h6mx83v09m8ewctsekw4a079dcl5sw4k';
 
 program
   .version('1.0.0')
   .description('CLI tool to monitor Railgun Broadcasters on Waku')
   .option('-c, --config <path>', 'Path to config JSON file')
   .option('--chain-id <number>', 'Chain ID to monitor', parseInt)
-  .option('--signer <string>', 'Trusted Fee Signer Public Key (establishes fee baseline)')
+  .option(
+    '--signer [addresses...]',
+    'Trusted Fee Signer Public Key (establishes fee baseline). Can be used multiple times.'
+  )
   .option('--no-signer', 'Disable Trusted Fee Signer (CAUTION: Removes fee protections)')
+  .option('--railway', 'Add Railway Wallet trusted fee signers')
+  .option('--terminal', 'Add Terminal Wallet trusted fee signers')
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
   .option('--native-only', 'Filter to show only native token fees')
   .option('--debug', 'Enable debug logging')
@@ -33,7 +37,7 @@ program
     let config: AppConfig = {
       chainType: DEFAULT_CHAIN_TYPE,
       chainId: DEFAULT_CHAIN_ID,
-      trustedFeeSigner: DEFAULT_SIGNER,
+      trustedFeeSigner: undefined,
       refreshInterval: DEFAULT_REFRESH,
       filterNative: options.nativeOnly || false,
       debug: options.debug || false,
@@ -60,12 +64,45 @@ program
 
     // Override with CLI args
     if (options.chainId) config.chainId = options.chainId;
-    if (options.signer) {
-      config.trustedFeeSigner = options.signer;
-    } else if (options.signer === false) {
-      // --no-signer passed
-      config.trustedFeeSigner = undefined;
+
+    const signers: string[] = [];
+
+    // 1. Existing config signers (from file)
+    if (config.trustedFeeSigner) {
+      if (Array.isArray(config.trustedFeeSigner)) {
+        signers.push(...config.trustedFeeSigner);
+      } else {
+        signers.push(config.trustedFeeSigner as string);
+      }
     }
+
+    // 2. CLI --signer flags
+    if (options.signer && options.signer !== false) {
+      // With [addresses...], options.signer is string[] if multiple args provided, or string if one
+      if (Array.isArray(options.signer)) {
+        signers.push(...options.signer);
+      } else {
+        signers.push(options.signer as string);
+      }
+    }
+
+    // 3. Wallet flags
+    if (options.railway) {
+      signers.push(...RAILWAY_SIGNERS);
+    }
+    if (options.terminal) {
+      signers.push(...TERMINAL_SIGNERS);
+    }
+
+    // 4. Handle --no-signer (options.signer === false)
+    if (options.signer === false) {
+      config.trustedFeeSigner = undefined;
+    } else {
+      // Deduplicate and set
+      const uniqueSigners = Array.from(new Set(signers));
+      config.trustedFeeSigner = uniqueSigners.length > 0 ? uniqueSigners : undefined;
+    }
+
     if (options.refresh) config.refreshInterval = options.refresh;
 
     const monitor = new BroadcasterMonitor(config);

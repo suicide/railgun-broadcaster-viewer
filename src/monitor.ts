@@ -49,7 +49,7 @@ export class BroadcasterMonitor extends EventEmitter {
       status: this.connectionStatus,
       peers: this.meshPeerCount,
       lastScan: this.lastScanTime,
-      hasSigner: !!this.config.trustedFeeSigner,
+      hasSigner: (this.config.trustedFeeSigner?.length ?? 0) > 0,
     };
   }
 
@@ -64,7 +64,8 @@ export class BroadcasterMonitor extends EventEmitter {
     this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`, 'info');
 
     const broadcasterOptions: BroadcasterOptions = {
-      trustedFeeSigner: this.config.trustedFeeSigner ?? '',
+      // @ts-ignore
+      trustedFeeSigner: this.config.trustedFeeSigner,
       useDNSDiscovery: true,
       additionalDirectPeers: [
         '/dns4/prod.rootedinprivacy.com/tcp/30304/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
+import { getWalletType } from '../signers.js';
 
 interface Props {
   broadcasters: SelectedBroadcaster[];
@@ -123,12 +124,38 @@ export const AddressList: React.FC<Props> = ({
           const truncLen = Math.max(5, availableWidth - prefix.length);
           const displayAddress = truncateMiddle(address, truncLen);
 
+          const walletType = getWalletType(address);
+          let itemColor = 'white';
+          let itemBackgroundColor = undefined;
+
+          if (isSelected) {
+            // Selected Highlighting (Cursor)
+            if (walletType === 'railway') {
+              itemColor = 'black';
+              itemBackgroundColor = 'cyan';
+            } else if (walletType === 'terminal') {
+              itemColor = 'white';
+              itemBackgroundColor = 'magenta';
+            } else if (walletType === 'both') {
+              itemColor = 'white';
+              itemBackgroundColor = 'blue';
+            } else {
+              itemColor = 'black';
+              itemBackgroundColor = 'green';
+            }
+          } else {
+            // Unselected Highlighting
+            if (walletType === 'railway') itemColor = 'cyan';
+            else if (walletType === 'terminal') itemColor = 'magenta';
+            else if (walletType === 'both') itemColor = 'blue';
+            else {
+              itemColor = isChecked ? 'green' : 'white';
+            }
+          }
+
           return (
             <Box key={globalIndex}>
-              <Text
-                color={isSelected ? 'black' : isChecked ? 'green' : 'white'}
-                backgroundColor={isSelected ? 'green' : undefined}
-              >
+              <Text color={itemColor} backgroundColor={itemBackgroundColor}>
                 {prefix}
                 {displayAddress}
               </Text>

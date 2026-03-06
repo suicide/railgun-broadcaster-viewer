@@ -4,6 +4,7 @@ import TextInput from 'ink-text-input';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { formatUnits } from 'ethers';
 import { getTokenName, isChainNativeToken, getTokenDecimals } from '../tokens.js';
+import { getWalletType } from '../signers.js';
 
 interface Props {
   broadcasters: SelectedBroadcaster[];
@@ -291,37 +292,57 @@ export const BroadcasterTable: React.FC<Props> = ({
             feeFormatted = `${valStr} ${tokenName || ''}`;
           }
 
+          const walletType = getWalletType(b.railgunAddress);
+          let rowColor = 'white';
+          let rowBackgroundColor = undefined;
+
+          if (isSelected) {
+            // Selected Row Highlighting
+            if (walletType === 'railway') {
+              rowColor = 'black';
+              rowBackgroundColor = 'cyan';
+            } else if (walletType === 'terminal') {
+              rowColor = 'white';
+              rowBackgroundColor = 'magenta';
+            } else if (walletType === 'both') {
+              rowColor = 'white';
+              rowBackgroundColor = 'blue';
+            } else {
+              rowColor = 'black';
+              rowBackgroundColor = 'green';
+            }
+          } else {
+            // Unselected Row Highlighting (Text Color Only)
+            if (walletType === 'railway') rowColor = 'cyan';
+            else if (walletType === 'terminal') rowColor = 'magenta';
+            else if (walletType === 'both') rowColor = 'blue';
+          }
+
+          // Fee Color Override for Normal Rows (keep original green styling)
+          let feeColor = rowColor;
+          if (!isSelected && walletType === 'none') {
+            feeColor = 'green';
+          }
+
           return (
             <Box key={`${b.railgunAddress}-${b.tokenAddress}-${globalIndex}`}>
               <Box width={colAddress}>
-                <Text
-                  color={isSelected ? 'black' : 'white'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={rowColor} backgroundColor={rowBackgroundColor}>
                   {address}
                 </Text>
               </Box>
               <Box width={colToken}>
-                <Text
-                  color={isSelected ? 'black' : 'white'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={rowColor} backgroundColor={rowBackgroundColor}>
                   {token}
                 </Text>
               </Box>
               <Box width={colFee}>
-                <Text
-                  color={isSelected ? 'black' : 'green'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={feeColor} backgroundColor={rowBackgroundColor}>
                   {feeFormatted}
                 </Text>
               </Box>
               <Box width={colExp}>
-                <Text
-                  color={isSelected ? 'black' : 'white'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={rowColor} backgroundColor={rowBackgroundColor}>
                   {new Date(b.tokenFee.expiration).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -329,26 +350,17 @@ export const BroadcasterTable: React.FC<Props> = ({
                 </Text>
               </Box>
               <Box width={colRel}>
-                <Text
-                  color={isSelected ? 'black' : 'white'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={rowColor} backgroundColor={rowBackgroundColor}>
                   {reliability}
                 </Text>
               </Box>
               <Box width={colWallets}>
-                <Text
-                  color={isSelected ? 'black' : 'white'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={rowColor} backgroundColor={rowBackgroundColor}>
                   {b.tokenFee.availableWallets}
                 </Text>
               </Box>
               <Box width={colAdapt}>
-                <Text
-                  color={isSelected ? 'black' : 'white'}
-                  backgroundColor={isSelected ? 'green' : undefined}
-                >
+                <Text color={rowColor} backgroundColor={rowBackgroundColor}>
                   {relayAdapt}
                 </Text>
               </Box>
