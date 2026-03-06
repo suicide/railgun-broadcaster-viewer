@@ -84,6 +84,7 @@ export const LogPanel: React.FC<Props> = ({ logs, isFocused }) => {
       flexDirection="column"
       borderStyle="single"
       height={10}
+      width="100%"
       borderColor={isFocused ? 'green' : 'white'}
     >
       <Text bold underline>

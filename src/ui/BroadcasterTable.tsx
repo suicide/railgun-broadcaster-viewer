@@ -10,6 +10,9 @@ interface Props {
   chainId: number;
   isFocused: boolean;
   height: number;
+  width: number;
+  filterMode: boolean;
+  setFilterMode: (mode: boolean) => void;
 }
 
 type SortKey = 'address' | 'token' | 'fee' | 'expiration' | 'reliability' | 'wallets' | 'adapt';
@@ -20,17 +23,34 @@ const truncateMiddle = (text: string, maxLength: number): string => {
   return text.slice(0, sideLength) + '...' + text.slice(-sideLength);
 };
 
-export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFocused, height }) => {
+export const BroadcasterTable: React.FC<Props> = ({
+  broadcasters,
+  chainId,
+  isFocused,
+  height,
+  width,
+  filterMode,
+  setFilterMode,
+}) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [offset, setOffset] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>('fee');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [filterMode, setFilterMode] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
 
-  // Calculate visible rows. Height includes borders (2) + Header (1) + Footer (1) or Filter (3)
+  // Calculate visible rows
   const availableHeight = height - (filterMode ? 6 : 4);
   const limit = Math.max(1, availableHeight);
+
+  // Calculate Column Widths
+  const innerWidth = Math.max(0, width - 4); // Border (2) + Padding (2) approx
+  const colAddress = Math.floor(innerWidth * 0.2);
+  const colToken = Math.floor(innerWidth * 0.2);
+  const colFee = Math.floor(innerWidth * 0.2);
+  const colExp = Math.floor(innerWidth * 0.1);
+  const colRel = Math.floor(innerWidth * 0.1);
+  const colWallets = Math.floor(innerWidth * 0.1);
+  const colAdapt = Math.floor(innerWidth * 0.1);
 
   // Filter and Sort
   const processedBroadcasters = useMemo(() => {
@@ -98,7 +118,6 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
   useEffect(() => {
     if (selectedIndex >= processedBroadcasters.length) {
       setSelectedIndex(Math.max(0, processedBroadcasters.length - 1));
-      // Adjust offset if needed
       if (offset > Math.max(0, processedBroadcasters.length - limit)) {
         setOffset(Math.max(0, processedBroadcasters.length - limit));
       }
@@ -109,9 +128,8 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
     if (!isFocused) return;
 
     if (filterMode) {
-      if (key.escape || key.return) {
+      if (key.return) {
         setFilterMode(false);
-        // If query is empty, maybe clear it? For now keep it.
       }
       return;
     }
@@ -191,7 +209,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
         padding={1}
         borderColor={isFocused ? 'green' : 'white'}
         height={height}
-        width="100%"
+        width={width}
       >
         <Text color="yellow">No broadcasters found yet.</Text>
       </Box>
@@ -200,11 +218,11 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
 
   const visible = processedBroadcasters.slice(offset, offset + limit);
 
-  const renderHeader = (label: string, key: SortKey, width: string) => {
+  const renderHeader = (label: string, key: SortKey, colWidth: number) => {
     const isSorting = sortKey === key;
     const arrow = isSorting ? (sortDirection === 'asc' ? '↑' : '↓') : '';
     return (
-      <Box width={width}>
+      <Box width={colWidth}>
         <Text bold color={isSorting ? 'green' : 'cyan'}>
           {label} {arrow}
         </Text>
@@ -217,17 +235,18 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
       flexDirection="column"
       borderStyle="single"
       height={height}
+      width={width}
       borderColor={isFocused ? 'green' : 'white'}
     >
       {/* Header */}
       <Box borderBottom={false} borderTop={false} borderLeft={false} borderRight={false}>
-        {renderHeader('Address (1)', 'address', '20%')}
-        {renderHeader('Token (2)', 'token', '20%')}
-        {renderHeader('Fee (3)', 'fee', '20%')}
-        {renderHeader('Exp. (4)', 'expiration', '10%')}
-        {renderHeader('Rel. (5)', 'reliability', '10%')}
-        {renderHeader('Wallets (6)', 'wallets', '10%')}
-        {renderHeader('Adapt (7)', 'adapt', '10%')}
+        {renderHeader('Address (1)', 'address', colAddress)}
+        {renderHeader('Token (2)', 'token', colToken)}
+        {renderHeader('Fee (3)', 'fee', colFee)}
+        {renderHeader('Exp. (4)', 'expiration', colExp)}
+        {renderHeader('Rel. (5)', 'reliability', colRel)}
+        {renderHeader('Wallets (6)', 'wallets', colWallets)}
+        {renderHeader('Adapt (7)', 'adapt', colAdapt)}
       </Box>
 
       {/* Rows */}
@@ -236,15 +255,20 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
           const globalIndex = offset + idx;
           const isSelected = globalIndex === selectedIndex;
 
-          const address = truncateMiddle(b.railgunAddress, 20);
-          let token = truncateMiddle(b.tokenAddress, 16);
+          const address = truncateMiddle(b.railgunAddress, Math.max(5, colAddress - 1));
+
+          let token = truncateMiddle(b.tokenAddress, Math.max(5, colToken - 1));
           const tokenName = getTokenName(chainId, b.tokenAddress);
           if (tokenName) {
-            token = `${tokenName} (${truncateMiddle(b.tokenAddress, 6)})`;
+            // Try to fit "Name (Addr)"
+            const addrLen = Math.max(6, Math.floor(colToken - tokenName.length - 4));
+            // If addrLen is too small, just show name? Or show "Name..."
+            // Let's just do standard truncation if name present
+            token = `${tokenName} (${truncateMiddle(b.tokenAddress, Math.max(4, addrLen))})`;
           }
 
           const reliability = Math.round(b.tokenFee.reliability * 100) + '%';
-          const relayAdapt = truncateMiddle(b.tokenFee.relayAdapt, 10);
+          const relayAdapt = truncateMiddle(b.tokenFee.relayAdapt, Math.max(5, colAdapt - 1));
 
           // Format Fee
           const decimals = getTokenDecimals(chainId, b.tokenAddress);
@@ -269,7 +293,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
 
           return (
             <Box key={`${b.railgunAddress}-${b.tokenAddress}-${globalIndex}`}>
-              <Box width="20%">
+              <Box width={colAddress}>
                 <Text
                   color={isSelected ? 'black' : 'white'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -277,7 +301,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
                   {address}
                 </Text>
               </Box>
-              <Box width="20%">
+              <Box width={colToken}>
                 <Text
                   color={isSelected ? 'black' : 'white'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -285,7 +309,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
                   {token}
                 </Text>
               </Box>
-              <Box width="20%">
+              <Box width={colFee}>
                 <Text
                   color={isSelected ? 'black' : 'green'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -293,7 +317,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
                   {feeFormatted}
                 </Text>
               </Box>
-              <Box width="10%">
+              <Box width={colExp}>
                 <Text
                   color={isSelected ? 'black' : 'white'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -304,7 +328,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
                   })}
                 </Text>
               </Box>
-              <Box width="10%">
+              <Box width={colRel}>
                 <Text
                   color={isSelected ? 'black' : 'white'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -312,7 +336,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
                   {reliability}
                 </Text>
               </Box>
-              <Box width="10%">
+              <Box width={colWallets}>
                 <Text
                   color={isSelected ? 'black' : 'white'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -320,7 +344,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
                   {b.tokenFee.availableWallets}
                 </Text>
               </Box>
-              <Box width="10%">
+              <Box width={colAdapt}>
                 <Text
                   color={isSelected ? 'black' : 'white'}
                   backgroundColor={isSelected ? 'green' : undefined}
@@ -346,7 +370,7 @@ export const BroadcasterTable: React.FC<Props> = ({ broadcasters, chainId, isFoc
         </Box>
       )}
 
-      {/* Scroll Indicator (only if not filtering or filter bar is outside this box logic) */}
+      {/* Scroll Indicator */}
       {!filterMode && (
         <Box justifyContent="center" height={1}>
           {processedBroadcasters.length > limit ? (

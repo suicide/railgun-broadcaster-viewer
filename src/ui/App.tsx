@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import { BroadcasterMonitor } from '../monitor.js';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
@@ -40,6 +40,7 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
   }, [stdout]);
 
   const [broadcasters, setBroadcasters] = useState<SelectedBroadcaster[]>([]);
+  const [frozenBroadcasters, setFrozenBroadcasters] = useState<SelectedBroadcaster[] | null>(null);
   const [logs, setLogs] = useState<Log[]>([]);
   const [status, setStatus] = useState({
     status: 'Initializing',
@@ -47,6 +48,8 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     lastScan: null as Date | null,
   });
   const [focus, setFocus] = useState<FocusArea>('table');
+  const [selectedAddresses, setSelectedAddresses] = useState<Set<string>>(new Set());
+  const [filterMode, setFilterMode] = useState(false);
 
   useEffect(() => {
     const onUpdate = (data: SelectedBroadcaster[]) => setBroadcasters(data);
@@ -64,7 +67,28 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     };
   }, [monitor]);
 
+  const currentData = frozenBroadcasters || broadcasters;
+
+  const filteredBroadcasters = useMemo(() => {
+    if (selectedAddresses.size === 0) return currentData;
+    return currentData.filter((b) => selectedAddresses.has(b.railgunAddress));
+  }, [currentData, selectedAddresses]);
+
   useInput((input, key) => {
+    if (key.escape) {
+      if (filterMode) {
+        setFilterMode(false);
+      } else {
+        // Toggle Freeze
+        if (frozenBroadcasters) {
+          setFrozenBroadcasters(null);
+        } else {
+          setFrozenBroadcasters(broadcasters);
+        }
+      }
+      return;
+    }
+
     if (key.tab) {
       if (key.shift) {
         // Prev focus
@@ -80,12 +104,22 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     }
   });
 
-  // Dynamic Height Calculation
-  // Header: 3 rows (border top, content, border bottom)
+  // Dynamic Height & Width Calculation
+  // Header: 3 rows
   // Logs: 10 rows
-  // Spacing/Margin: 0
   // Content Height = Total - 13
   const contentHeight = Math.max(5, dimensions.rows - 13);
+  const tableWidth = Math.floor(dimensions.columns * 0.7);
+  const addressWidth = dimensions.columns - tableWidth;
+
+  const toggleAddress = (address: string) => {
+    const next = new Set(selectedAddresses);
+    if (next.has(address)) next.delete(address);
+    else next.add(address);
+    setSelectedAddresses(next);
+  };
+
+  const isFrozen = frozenBroadcasters !== null;
 
   return (
     <Box flexDirection="column" height={dimensions.rows}>
@@ -99,33 +133,45 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
           <Text color={status.status === 'Connected' ? 'green' : 'yellow'}>{status.status}</Text> |
           Peers: {status.peers} | Last Scan:{' '}
           {status.lastScan ? status.lastScan.toLocaleTimeString() : 'Pending'}
+          {isFrozen && (
+            <Text color="cyan" bold>
+              {' '}
+              | [FROZEN] (Esc to unfreeze)
+            </Text>
+          )}
         </Text>
       </Box>
 
       {/* Main Content Area */}
       <Box flexDirection="row" height={contentHeight}>
         {/* Left: Table */}
-        <Box width="70%" flexDirection="column">
+        <Box width={tableWidth} flexDirection="column">
           <BroadcasterTable
-            broadcasters={broadcasters}
+            broadcasters={filteredBroadcasters}
             chainId={chainId}
             isFocused={focus === 'table'}
             height={contentHeight}
+            width={tableWidth}
+            filterMode={filterMode}
+            setFilterMode={setFilterMode}
           />
         </Box>
 
         {/* Right: Address List */}
-        <Box width="30%" flexDirection="column">
+        <Box width={addressWidth} flexDirection="column">
           <AddressList
-            broadcasters={broadcasters}
+            broadcasters={currentData}
             isFocused={focus === 'address'}
             height={contentHeight}
+            width={addressWidth}
+            selectedAddresses={selectedAddresses}
+            toggleAddress={toggleAddress}
           />
         </Box>
       </Box>
 
       {/* Bottom: Logs */}
-      <Box height={10}>
+      <Box height={10} width="100%">
         <LogPanel logs={logs} isFocused={focus === 'logs'} />
       </Box>
     </Box>

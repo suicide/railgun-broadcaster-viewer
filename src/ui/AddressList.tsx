@@ -6,6 +6,9 @@ interface Props {
   broadcasters: SelectedBroadcaster[];
   isFocused: boolean;
   height: number;
+  width: number;
+  selectedAddresses: Set<string>;
+  toggleAddress: (address: string) => void;
 }
 
 const truncateMiddle = (text: string, maxLength: number): string => {
@@ -14,7 +17,14 @@ const truncateMiddle = (text: string, maxLength: number): string => {
   return text.slice(0, sideLength) + '...' + text.slice(-sideLength);
 };
 
-export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }) => {
+export const AddressList: React.FC<Props> = ({
+  broadcasters,
+  isFocused,
+  height,
+  width,
+  selectedAddresses,
+  toggleAddress,
+}) => {
   // Extract unique addresses
   const uniqueAddresses = Array.from(new Set(broadcasters.map((b) => b.railgunAddress)));
 
@@ -37,6 +47,13 @@ export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }
 
   useInput((input, key) => {
     if (!isFocused) return;
+
+    if (input === ' ') {
+      const address = uniqueAddresses[selectedIndex];
+      if (address) {
+        toggleAddress(address);
+      }
+    }
 
     if (key.downArrow || input === 'j') {
       const nextIndex = Math.min(uniqueAddresses.length - 1, selectedIndex + 1);
@@ -83,12 +100,14 @@ export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }
   });
 
   const visible = uniqueAddresses.slice(offset, offset + limit);
+  const availableWidth = Math.max(0, width - 4); // Border(2) + Padding(2) approx
 
   return (
     <Box
       flexDirection="column"
       borderStyle="single"
       height={height}
+      width={width}
       borderColor={isFocused ? 'green' : 'white'}
     >
       <Text bold underline>
@@ -98,14 +117,19 @@ export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }
         {visible.map((address, idx) => {
           const globalIndex = offset + idx;
           const isSelected = globalIndex === selectedIndex;
-          const displayAddress = truncateMiddle(address, 20); // Truncate to fit
+          const isChecked = selectedAddresses.has(address);
+
+          const prefix = isChecked ? '[x] ' : '[ ] ';
+          const truncLen = Math.max(5, availableWidth - prefix.length);
+          const displayAddress = truncateMiddle(address, truncLen);
 
           return (
             <Box key={globalIndex}>
               <Text
-                color={isSelected ? 'black' : 'white'}
+                color={isSelected ? 'black' : isChecked ? 'green' : 'white'}
                 backgroundColor={isSelected ? 'green' : undefined}
               >
+                {prefix}
                 {displayAddress}
               </Text>
             </Box>
