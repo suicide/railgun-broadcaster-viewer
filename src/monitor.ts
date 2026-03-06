@@ -9,31 +9,41 @@ import {
   SelectedBroadcaster,
 } from '@railgun-community/shared-models';
 import { AppConfig } from './types';
-import { createBroadcasterTable, formatLogMessage } from './ui';
 import { isChainNativeToken } from './tokens';
-import chalk from 'chalk';
-import logUpdate from 'log-update';
 import fs from 'fs';
 import path from 'path';
+import { EventEmitter } from 'events';
 
-export class BroadcasterMonitor {
+export class BroadcasterMonitor extends EventEmitter {
   private config: AppConfig;
   private chain: Chain;
   private isRunning: boolean = false;
   private timer: NodeJS.Timeout | null = null;
 
-  // State for rendering
-  private logs: string[] = [];
+  // State
   private broadcasters: SelectedBroadcaster[] = [];
   private lastScanTime: Date | null = null;
   private connectionStatus: string = 'Initializing...';
   private meshPeerCount: number = 0;
 
   constructor(config: AppConfig) {
+    super();
     this.config = config;
     this.chain = {
       type: config.chainType,
       id: config.chainId,
+    };
+  }
+
+  public getBroadcasters(): SelectedBroadcaster[] {
+    return this.broadcasters;
+  }
+
+  public getStatus(): { status: string; peers: number; lastScan: Date | null } {
+    return {
+      status: this.connectionStatus,
+      peers: this.meshPeerCount,
+      lastScan: this.lastScanTime,
     };
   }
 
@@ -45,22 +55,19 @@ export class BroadcasterMonitor {
       this.logToFile(`\n--- New Session Started at ${new Date().toISOString()} ---\n`);
     }
 
-    this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`);
+    this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`, 'info');
 
     const broadcasterOptions: BroadcasterOptions = {
       trustedFeeSigner: this.config.trustedFeeSigner ?? '',
       useDNSDiscovery: true,
       additionalDirectPeers: [
-
-        "/dns4/prod.rootedinprivacy.com/tcp/30304/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m",
-        "/dns4/prod.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m",
+        '/dns4/prod.rootedinprivacy.com/tcp/30304/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',
+        '/dns4/prod.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',
       ],
       pubSubTopic: this.config.pubSubTopic ?? '/waku/2/rs/1/1',
     };
 
     this.addLog(`Waku Options: ${JSON.stringify(broadcasterOptions)}`, 'info');
-
-    this.render();
 
     const broadcasterDebugger: BroadcasterDebugger | undefined = this.config.debug
       ? {
@@ -77,7 +84,6 @@ export class BroadcasterMonitor {
         broadcasterDebugger
       );
       this.addLog('Waku Client started successfully.', 'success');
-      this.render();
 
       // Initial scan
       await this.scan();
@@ -88,7 +94,6 @@ export class BroadcasterMonitor {
       }, this.config.refreshInterval);
     } catch (error: any) {
       this.addLog(`Failed to start Waku Client: ${error.message}`, 'error');
-      this.render();
       this.stop();
     }
   }
@@ -99,23 +104,18 @@ export class BroadcasterMonitor {
       clearInterval(this.timer);
       this.timer = null;
     }
-    WakuBroadcasterClient.stop().catch(console.error);
-    this.addLog('Monitor stopped.');
-    this.render();
+    WakuBroadcasterClient.stop().catch((e) => console.error(e));
+    this.addLog('Monitor stopped.', 'info');
   }
 
   private handleStatusUpdate(chain: Chain, status: BroadcasterConnectionStatus) {
     this.connectionStatus = status;
     this.addLog(`Connection Status Update: ${status}`, 'info');
-    this.render();
+    this.emit('status', this.getStatus());
   }
 
   private async scan() {
     if (!this.isRunning) return;
-
-    // Optional: Log that we are scanning?
-    // this.addLog('Scanning for broadcasters...', 'info');
-    // this.render();
 
     try {
       this.broadcasters =
@@ -138,9 +138,6 @@ export class BroadcasterMonitor {
           if (waku && waku.libp2p) {
             const connections = waku.libp2p.getConnections();
             this.addLog(`[Debug] Open Connections: ${connections.length}`, 'info');
-            for (const conn of connections) {
-              this.addLog(`[Debug] Connected to: ${conn.remoteAddr.toString()}`, 'info');
-            }
           }
         } catch (e) {
           // Ignore debug errors
@@ -153,20 +150,15 @@ export class BroadcasterMonitor {
         this.meshPeerCount = 0;
       }
 
-      this.render();
+      this.emit('update', this.broadcasters);
+      this.emit('status', this.getStatus());
     } catch (e: any) {
       this.addLog(`Scan failed: ${e.message}`, 'error');
-      this.render();
     }
   }
 
   private addLog(message: string, type: 'info' | 'success' | 'error' | 'warn' = 'info') {
-    const formatted = formatLogMessage(message, type);
-    this.logs.push(formatted);
-    // Keep only last 8 logs
-    if (this.logs.length > 8) {
-      this.logs.shift();
-    }
+    this.emit('log', { message, type, timestamp: new Date() });
     this.logToFile(`[${type.toUpperCase()}] ${message}`);
   }
 
@@ -181,49 +173,7 @@ export class BroadcasterMonitor {
     try {
       fs.appendFileSync(logPath, line + '\n');
     } catch (e) {
-      // Ignore file write errors to avoid crashing the monitor
+      // Ignore file write errors
     }
-  }
-
-  private render() {
-    const lines: string[] = [];
-
-    // Header
-    lines.push(chalk.bold.underline(`Railgun Broadcaster Monitor (Chain: ${this.chain.id})`));
-    lines.push(
-      `${chalk.bold('Status:')} ${this.connectionStatus}  |  ${chalk.bold('Mesh Peers:')} ${this.meshPeerCount}`
-    );
-
-    const signerDisplay = this.config.trustedFeeSigner
-      ? `${this.config.trustedFeeSigner.substring(0, 10)}...`
-      : chalk.yellow('Disabled (No protection)');
-
-    lines.push(`${chalk.bold('Trusted Signer:')} ${signerDisplay}`);
-
-    if (this.lastScanTime) {
-      lines.push(`${chalk.bold('Last Scan:')} ${this.lastScanTime.toLocaleTimeString()}`);
-    } else {
-      lines.push(`${chalk.bold('Last Scan:')} Pending...`);
-    }
-
-    lines.push(''); // Spacer
-
-    // Logs Section
-    lines.push(chalk.dim('--- Recent Logs ---'));
-    if (this.logs.length === 0) {
-      lines.push(chalk.gray('(No logs yet)'));
-    } else {
-      lines.push(...this.logs);
-    }
-    lines.push(''); // Spacer
-
-    // Table Section
-    if (this.broadcasters.length === 0) {
-      lines.push(chalk.yellow('No broadcasters found yet.'));
-    } else {
-      lines.push(createBroadcasterTable(this.broadcasters, this.chain.id));
-    }
-
-    logUpdate(lines.join('\n'));
   }
 }

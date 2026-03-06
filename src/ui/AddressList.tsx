@@ -1,0 +1,107 @@
+import React, { useState, useEffect } from 'react';
+import { Box, Text, useInput } from 'ink';
+import { SelectedBroadcaster } from '@railgun-community/shared-models';
+
+interface Props {
+  broadcasters: SelectedBroadcaster[];
+  isFocused: boolean;
+  height: number;
+}
+
+const truncateMiddle = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text;
+  const sideLength = Math.floor((maxLength - 3) / 2);
+  return text.slice(0, sideLength) + '...' + text.slice(-sideLength);
+};
+
+export const AddressList: React.FC<Props> = ({ broadcasters, isFocused, height }) => {
+  // Extract unique addresses
+  const uniqueAddresses = Array.from(new Set(broadcasters.map((b) => b.railgunAddress)));
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [offset, setOffset] = useState(0);
+
+  // Calculate visible rows. Height includes borders (2) + Header (1) + Footer (1)
+  const limit = Math.max(1, height - 4);
+
+  // Reset/adjust selection if list shrinks
+  useEffect(() => {
+    if (selectedIndex >= uniqueAddresses.length) {
+      setSelectedIndex(Math.max(0, uniqueAddresses.length - 1));
+    }
+  }, [uniqueAddresses.length]);
+
+  useInput((input, key) => {
+    if (!isFocused) return;
+
+    if (key.downArrow || input === 'j') {
+      const nextIndex = Math.min(uniqueAddresses.length - 1, selectedIndex + 1);
+      setSelectedIndex(nextIndex);
+      if (nextIndex >= offset + limit) {
+        setOffset(nextIndex - limit + 1);
+      }
+    }
+
+    if (key.upArrow || input === 'k') {
+      const prevIndex = Math.max(0, selectedIndex - 1);
+      setSelectedIndex(prevIndex);
+      if (prevIndex < offset) {
+        setOffset(prevIndex);
+      }
+    }
+
+    if (key.pageDown) {
+      const nextIndex = Math.min(uniqueAddresses.length - 1, selectedIndex + limit);
+      setSelectedIndex(nextIndex);
+      setOffset(Math.min(Math.max(0, uniqueAddresses.length - limit), offset + limit));
+    }
+
+    if (key.pageUp) {
+      const prevIndex = Math.max(0, selectedIndex - limit);
+      setSelectedIndex(prevIndex);
+      setOffset(Math.max(0, offset - limit));
+    }
+  });
+
+  const visible = uniqueAddresses.slice(offset, offset + limit);
+
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="single"
+      height={height}
+      borderColor={isFocused ? 'green' : 'white'}
+    >
+      <Text bold underline>
+        Addresses ({uniqueAddresses.length})
+      </Text>
+      <Box flexDirection="column" flexGrow={1}>
+        {visible.map((address, idx) => {
+          const globalIndex = offset + idx;
+          const isSelected = globalIndex === selectedIndex;
+          const displayAddress = truncateMiddle(address, 20); // Truncate to fit
+
+          return (
+            <Box key={globalIndex}>
+              <Text
+                color={isSelected ? 'black' : 'white'}
+                backgroundColor={isSelected ? 'green' : undefined}
+              >
+                {displayAddress}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* Scroll Indicators */}
+      <Box justifyContent="center" height={1}>
+        {uniqueAddresses.length > limit ? (
+          <Text color="gray">
+            {offset > 0 ? '↑' : ' '} {offset + limit < uniqueAddresses.length ? '↓' : ' '}
+          </Text>
+        ) : null}
+      </Box>
+    </Box>
+  );
+};

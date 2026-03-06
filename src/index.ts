@@ -1,9 +1,12 @@
 #!/usr/bin/env node
+import React from 'react';
+import { render } from 'ink';
 import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
-import { AppConfig } from './types';
-import { BroadcasterMonitor } from './monitor';
+import { AppConfig } from './types.js';
+import { BroadcasterMonitor } from './monitor.js';
+import { App } from './ui/App.js';
 import chalk from 'chalk';
 
 const program = new Command();
@@ -44,7 +47,7 @@ program
         try {
           const fileConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
           config = { ...config, ...fileConfig };
-          console.log(chalk.blue(`Loaded config from ${configPath}`));
+          // console.log(chalk.blue(`Loaded config from ${configPath}`));
         } catch (error) {
           console.error(chalk.red(`Error reading config file: ${(error as Error).message}`));
           process.exit(1);
@@ -67,14 +70,27 @@ program
 
     const monitor = new BroadcasterMonitor(config);
 
-    // Handle graceful shutdown
-    process.on('SIGINT', () => {
-      console.log(chalk.bold('\nStopping monitor...'));
-      monitor.stop();
-      process.exit(0);
-    });
+    // Enter Alt Screen
+    process.stdout.write('\x1b[?1049h');
 
-    await monitor.start();
+    // Render the TUI
+    const { waitUntilExit } = render(
+      React.createElement(App, { monitor, chainId: config.chainId })
+    );
+
+    // Start monitoring
+    monitor.start();
+
+    // Cleanup on exit
+    try {
+      await waitUntilExit();
+    } catch (e) {
+      // Ignore
+    }
+    monitor.stop();
+    // Exit Alt Screen
+    process.stdout.write('\x1b[?1049l');
+    process.exit(0);
   });
 
 program.parse(process.argv);
