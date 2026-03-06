@@ -39,11 +39,17 @@ export class BroadcasterMonitor extends EventEmitter {
     return this.broadcasters;
   }
 
-  public getStatus(): { status: string; peers: number; lastScan: Date | null } {
+  public getStatus(): {
+    status: string;
+    peers: number;
+    lastScan: Date | null;
+    hasSigner: boolean;
+  } {
     return {
       status: this.connectionStatus,
       peers: this.meshPeerCount,
       lastScan: this.lastScanTime,
+      hasSigner: !!this.config.trustedFeeSigner,
     };
   }
 

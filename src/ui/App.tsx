@@ -46,6 +46,7 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     status: 'Initializing',
     peers: 0,
     lastScan: null as Date | null,
+    hasSigner: true,
   });
   const [focus, setFocus] = useState<FocusArea>('table');
   const [selectedAddresses, setSelectedAddresses] = useState<Set<string>>(new Set());
@@ -59,6 +60,9 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     monitor.on('update', onUpdate);
     monitor.on('log', onLog);
     monitor.on('status', onStatus);
+
+    // Initial status set
+    setStatus(monitor.getStatus());
 
     return () => {
       monitor.off('update', onUpdate);
@@ -137,6 +141,12 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
             <Text color="cyan" bold>
               {' '}
               | [FROZEN] (Esc to unfreeze)
+            </Text>
+          )}
+          {!status.hasSigner && (
+            <Text color="red" bold>
+              {' '}
+              | [NO SIGNER]
             </Text>
           )}
         </Text>
