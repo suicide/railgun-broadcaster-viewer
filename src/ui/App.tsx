@@ -5,6 +5,7 @@ import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { BroadcasterTable } from './BroadcasterTable.js';
 import { AddressList } from './AddressList.js';
 import { LogPanel } from './LogPanel.js';
+import { getNetworkName } from '../networks.js';
 
 interface Props {
   monitor: BroadcasterMonitor;
@@ -133,7 +134,11 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
           <Text bold color="magenta">
             Railgun Broadcaster Viewer
           </Text>{' '}
-          | Status:{' '}
+          | Network:{' '}
+          <Text bold color="cyan">
+            {getNetworkName(chainId)}
+          </Text>{' '}
+          ({chainId}) | Status:{' '}
           <Text color={status.status === 'Connected' ? 'green' : 'yellow'}>{status.status}</Text> |
           Peers: {status.peers} | Last Scan:{' '}
           {status.lastScan ? status.lastScan.toLocaleTimeString() : 'Pending'}
