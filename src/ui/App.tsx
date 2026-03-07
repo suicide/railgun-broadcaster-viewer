@@ -6,6 +6,7 @@ import { BroadcasterTable } from './BroadcasterTable.js';
 import { AddressList } from './AddressList.js';
 import { LogPanel } from './LogPanel.js';
 import { getNetworkName } from '../networks.js';
+import { identifySignerSet } from '../signers.js';
 
 interface Props {
   monitor: BroadcasterMonitor;
@@ -47,7 +48,7 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     status: 'Initializing',
     peers: 0,
     lastScan: null as Date | null,
-    hasSigner: true,
+    trustedFeeSigners: [] as string[],
   });
   const [focus, setFocus] = useState<FocusArea>('table');
   const [selectedAddresses, setSelectedAddresses] = useState<Set<string>>(new Set());
@@ -126,6 +127,19 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
 
   const isFrozen = frozenBroadcasters !== null;
 
+  const signerSetType = identifySignerSet(status.trustedFeeSigners);
+  const signerStatusColor =
+    signerSetType === 'none' ? 'red' : signerSetType === 'custom' ? 'yellow' : 'green';
+
+  const signerLabel =
+    signerSetType === 'none'
+      ? '[NO SIGNER]'
+      : signerSetType === 'railway'
+        ? '[RAILWAY]'
+        : signerSetType === 'terminal'
+          ? '[TERMINAL]'
+          : '[CUSTOM]';
+
   return (
     <Box flexDirection="column" height={dimensions.rows}>
       {/* Header */}
@@ -145,15 +159,13 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
           {isFrozen && (
             <Text color="cyan" bold>
               {' '}
-              | [FROZEN] (Esc to unfreeze)
+              | [FROZEN]
             </Text>
           )}
-          {!status.hasSigner && (
-            <Text color="red" bold>
-              {' '}
-              | [NO SIGNER]
-            </Text>
-          )}
+          <Text color={signerStatusColor} bold>
+            {' '}
+            | {signerLabel}
+          </Text>
         </Text>
       </Box>
 
@@ -169,6 +181,7 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
             width={tableWidth}
             filterMode={filterMode}
             setFilterMode={setFilterMode}
+            trustedFeeSigners={status.trustedFeeSigners}
           />
         </Box>
 
@@ -181,6 +194,7 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
             width={addressWidth}
             selectedAddresses={selectedAddresses}
             toggleAddress={toggleAddress}
+            trustedFeeSigners={status.trustedFeeSigners}
           />
         </Box>
       </Box>

@@ -4,7 +4,7 @@ import TextInput from 'ink-text-input';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { formatUnits } from 'ethers';
 import { getTokenName, isChainNativeToken, getTokenDecimals } from '../tokens.js';
-import { getWalletType } from '../signers.js';
+import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from '../signers.js';
 
 interface Props {
   broadcasters: SelectedBroadcaster[];
@@ -14,6 +14,7 @@ interface Props {
   width: number;
   filterMode: boolean;
   setFilterMode: (mode: boolean) => void;
+  trustedFeeSigners: string[];
 }
 
 type SortKey = 'address' | 'token' | 'fee' | 'expiration' | 'reliability' | 'wallets' | 'adapt';
@@ -32,6 +33,7 @@ export const BroadcasterTable: React.FC<Props> = ({
   width,
   filterMode,
   setFilterMode,
+  trustedFeeSigners,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -292,35 +294,40 @@ export const BroadcasterTable: React.FC<Props> = ({
             feeFormatted = `${valStr} ${tokenName || ''}`;
           }
 
-          const walletType = getWalletType(b.railgunAddress);
+          // --- Highlighting Logic ---
+          const isTrusted = trustedFeeSigners.includes(b.railgunAddress);
+          const isPartner =
+            !isTrusted &&
+            (RAILWAY_SIGNERS.includes(b.railgunAddress) ||
+              TERMINAL_SIGNERS.includes(b.railgunAddress));
+
           let rowColor = 'white';
           let rowBackgroundColor = undefined;
 
           if (isSelected) {
             // Selected Row Highlighting
-            if (walletType === 'railway') {
+            if (isTrusted) {
+              rowColor = 'black';
+              rowBackgroundColor = 'yellow';
+            } else if (isPartner) {
               rowColor = 'black';
               rowBackgroundColor = 'cyan';
-            } else if (walletType === 'terminal') {
-              rowColor = 'white';
-              rowBackgroundColor = 'magenta';
-            } else if (walletType === 'both') {
-              rowColor = 'white';
-              rowBackgroundColor = 'blue';
             } else {
               rowColor = 'black';
-              rowBackgroundColor = 'green';
+              rowBackgroundColor = 'white';
             }
           } else {
             // Unselected Row Highlighting (Text Color Only)
-            if (walletType === 'railway') rowColor = 'cyan';
-            else if (walletType === 'terminal') rowColor = 'magenta';
-            else if (walletType === 'both') rowColor = 'blue';
+            if (isTrusted) rowColor = 'yellow';
+            else if (isPartner) rowColor = 'cyan';
+            else rowColor = 'white';
           }
 
-          // Fee Color Override for Normal Rows (keep original green styling)
+          // Fee Color Override for Normal Rows
           let feeColor = rowColor;
-          if (!isSelected && walletType === 'none') {
+          // If no specific highlight is applied to the row, maybe color the fee green if it's "good"?
+          // Keeping original behavior: if walletType was 'none' (now Tier 3), fee was green.
+          if (!isSelected && !isTrusted && !isPartner) {
             feeColor = 'green';
           }
 

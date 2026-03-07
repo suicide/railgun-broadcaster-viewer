@@ -43,13 +43,13 @@ export class BroadcasterMonitor extends EventEmitter {
     status: string;
     peers: number;
     lastScan: Date | null;
-    hasSigner: boolean;
+    trustedFeeSigners: string[];
   } {
     return {
       status: this.connectionStatus,
       peers: this.meshPeerCount,
       lastScan: this.lastScanTime,
-      hasSigner: (this.config.trustedFeeSigner?.length ?? 0) > 0,
+      trustedFeeSigners: this.config.trustedFeeSigner ?? [],
     };
   }
 
@@ -64,6 +64,7 @@ export class BroadcasterMonitor extends EventEmitter {
     this.addLog(`Initializing Waku Broadcaster Client for Chain ID ${this.chain.id}...`, 'info');
 
     const broadcasterOptions: BroadcasterOptions = {
+      // IMPORTANT: trustedFeeSigner has to be set to undefined if we actually want to disable the feature
       // @ts-ignore
       trustedFeeSigner: this.config.trustedFeeSigner,
       useDNSDiscovery: true,

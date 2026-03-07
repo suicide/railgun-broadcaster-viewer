@@ -22,3 +22,22 @@ export const getWalletType = (address: string): WalletType => {
   if (isTerminal) return 'terminal';
   return 'none';
 };
+
+export type SignerSetType = 'railway' | 'terminal' | 'custom' | 'none';
+
+export const identifySignerSet = (signers: string[]): SignerSetType => {
+  if (signers.length === 0) return 'none';
+
+  // Check if it exactly matches Railway
+  const isRailway =
+    signers.length === RAILWAY_SIGNERS.length && signers.every((s) => RAILWAY_SIGNERS.includes(s));
+  if (isRailway) return 'railway';
+
+  // Check if it exactly matches Terminal
+  const isTerminal =
+    signers.length === TERMINAL_SIGNERS.length &&
+    signers.every((s) => TERMINAL_SIGNERS.includes(s));
+  if (isTerminal) return 'terminal';
+
+  return 'custom';
+};

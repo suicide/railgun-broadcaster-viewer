@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
-import { getWalletType } from '../signers.js';
+import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from '../signers.js';
 
 interface Props {
   broadcasters: SelectedBroadcaster[];
@@ -10,6 +10,7 @@ interface Props {
   width: number;
   selectedAddresses: Set<string>;
   toggleAddress: (address: string) => void;
+  trustedFeeSigners: string[];
 }
 
 const truncateMiddle = (text: string, maxLength: number): string => {
@@ -25,6 +26,7 @@ export const AddressList: React.FC<Props> = ({
   width,
   selectedAddresses,
   toggleAddress,
+  trustedFeeSigners,
 }) => {
   // Extract unique addresses
   const uniqueAddresses = Array.from(new Set(broadcasters.map((b) => b.railgunAddress)));
@@ -124,30 +126,30 @@ export const AddressList: React.FC<Props> = ({
           const truncLen = Math.max(5, availableWidth - prefix.length);
           const displayAddress = truncateMiddle(address, truncLen);
 
-          const walletType = getWalletType(address);
+          // --- Highlighting Logic ---
+          const isTrusted = trustedFeeSigners.includes(address);
+          const isPartner =
+            !isTrusted && (RAILWAY_SIGNERS.includes(address) || TERMINAL_SIGNERS.includes(address));
+
           let itemColor = 'white';
           let itemBackgroundColor = undefined;
 
           if (isSelected) {
             // Selected Highlighting (Cursor)
-            if (walletType === 'railway') {
+            if (isTrusted) {
+              itemColor = 'black';
+              itemBackgroundColor = 'yellow';
+            } else if (isPartner) {
               itemColor = 'black';
               itemBackgroundColor = 'cyan';
-            } else if (walletType === 'terminal') {
-              itemColor = 'white';
-              itemBackgroundColor = 'magenta';
-            } else if (walletType === 'both') {
-              itemColor = 'white';
-              itemBackgroundColor = 'blue';
             } else {
               itemColor = 'black';
-              itemBackgroundColor = 'green';
+              itemBackgroundColor = 'white';
             }
           } else {
             // Unselected Highlighting
-            if (walletType === 'railway') itemColor = 'cyan';
-            else if (walletType === 'terminal') itemColor = 'magenta';
-            else if (walletType === 'both') itemColor = 'blue';
+            if (isTrusted) itemColor = 'yellow';
+            else if (isPartner) itemColor = 'cyan';
             else {
               itemColor = isChecked ? 'green' : 'white';
             }

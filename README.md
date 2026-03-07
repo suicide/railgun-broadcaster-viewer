@@ -61,10 +61,19 @@ npm start -- --signer <TRUSTED_SIGNER_PUBLIC_KEY>
 
 The tool includes built-in public keys for major community wallets:
 
-- **Railway Wallet**: `--railway` (Highlighted in Cyan)
-- **Terminal Wallet**: `--terminal` (Highlighted in Magenta)
+- **Railway Wallet**: `--railway`
+- **Terminal Wallet**: `--terminal`
 
-Broadcasters matching these signers are highlighted in the UI for easy identification.
+**Highlighting Logic**:
+
+1.  **Active Trusted Signers** (Priority): Highlighted in **Yellow**. These are the signers
+    currently enforcing fee limits (enabled via flags).
+2.  **Partner Signers**: Highlighted in **Cyan**. These are known Railway or Terminal signers that
+    are _not_ currently active as trusted signers.
+3.  **Others**: Default White.
+
+The status line will indicate the currently active signer set: `[RAILWAY]`, `[TERMINAL]`,
+`[CUSTOM]`, or `[NO SIGNER]`.
 
 ## Keyboard Controls
 
