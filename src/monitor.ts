@@ -68,11 +68,15 @@ export class BroadcasterMonitor extends EventEmitter {
       // @ts-ignore
       trustedFeeSigner: this.config.trustedFeeSigner,
       useDNSDiscovery: true,
-      additionalDirectPeers: [
-        '/dns4/prod.rootedinprivacy.com/tcp/30304/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',
-        '/dns4/prod.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',
-      ],
-      pubSubTopic: this.config.pubSubTopic ?? '/waku/2/rs/1/1',
+      // additionalDirectPeers: [
+      //   '/dns4/prod.rootedinprivacy.com/tcp/30304/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',
+      //   '/dns4/prod.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAkwNeQVY32bUrL1eM68ryMa48PXY5Bhfxfg9e2byYcc46m',
+      //
+      //   "/dns4/relay-a.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAmFbD2ZvAFi2j9jjDo6g4HFbQAhfjDfnTTrbyRGQRmtG7x",
+      //   "/dns4/relay-b.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAmPtEAoPPok7VLrpNNC6t92ZQFqLndHvkdx6Fk3CxA4MaG",
+      //   "/dns4/client-edge.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAmQdCGG5qREQCq96kucmpUVupmvLwrTRjMazPAaMTNP97A"
+      // ],
+      pubSubTopic: this.config.pubSubTopic,
     };
 
     this.addLog(`Waku Options: ${JSON.stringify(broadcasterOptions)}`, 'info');
