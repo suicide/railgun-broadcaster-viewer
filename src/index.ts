@@ -29,6 +29,10 @@ program
   .option('--no-signer', 'Disable Trusted Fee Signer (CAUTION: Removes fee protections)')
   .option('--railway', 'Add Railway Wallet trusted fee signers')
   .option('--terminal', 'Add Terminal Wallet trusted fee signers')
+  .option(
+    '--extended-static-nodes',
+    'Use the default Waku static nodes plus additional Private Paymaster peers'
+  )
   .option('--refresh <number>', 'Refresh interval in milliseconds', parseInt)
   .option('--native-only', 'Filter to show only native token fees')
   .option('--debug', 'Enable debug logging')
@@ -38,6 +42,7 @@ program
       chainType: DEFAULT_CHAIN_TYPE,
       chainId: DEFAULT_CHAIN_ID,
       trustedFeeSigner: undefined,
+      extendedStaticNodes: false,
       refreshInterval: DEFAULT_REFRESH,
       filterNative: options.nativeOnly || false,
       debug: options.debug || false,
@@ -64,6 +69,7 @@ program
 
     // Override with CLI args
     if (options.chainId) config.chainId = options.chainId;
+    if (options.extendedStaticNodes) config.extendedStaticNodes = true;
 
     const signers: string[] = [];
 

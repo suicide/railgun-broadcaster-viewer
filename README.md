@@ -55,6 +55,9 @@ npm start -- --railway --terminal # Use both
 
 # Custom Signer
 npm start -- --signer <TRUSTED_SIGNER_PUBLIC_KEY>
+
+# Use the library defaults plus the extended static node set
+npm start -- --extended-static-nodes
 ```
 
 ### Trusted Fee Signers (Community)
@@ -97,16 +100,17 @@ The status line will indicate the currently active signer set: `[RAILWAY]`, `[TE
 
 Options can be passed via CLI flags or a `config.json` file.
 
-| Option           | Description                                | Default |
-| :--------------- | :----------------------------------------- | :------ |
-| `--chain-id <n>` | Chain ID to monitor                        | `1`     |
-| `--railway`      | Add Railway Wallet trusted signers         | `false` |
-| `--terminal`     | Add Terminal Wallet trusted signers        | `false` |
-| `--signer <key>` | Custom Trusted Fee Signer Key (repeatable) | `[]`    |
-| `--no-signer`    | Run without any Trusted Fee Signer         | `true`  |
-| `--refresh <ms>` | Refresh interval in milliseconds           | `30000` |
-| `--debug`        | Enable verbose Waku debugging              | `false` |
-| `--log-to-file`  | Save logs to `broadcaster-viewer.log`      | `false` |
+| Option                    | Description                                | Default |
+| :------------------------ | :----------------------------------------- | :------ |
+| `--chain-id <n>`          | Chain ID to monitor                        | `1`     |
+| `--railway`               | Add Railway Wallet trusted signers         | `false` |
+| `--terminal`              | Add Terminal Wallet trusted signers        | `false` |
+| `--signer <key>`          | Custom Trusted Fee Signer Key (repeatable) | `[]`    |
+| `--no-signer`             | Run without any Trusted Fee Signer         | `true`  |
+| `--extended-static-nodes` | Add the extended static Waku peer set      | `false` |
+| `--refresh <ms>`          | Refresh interval in milliseconds           | `30000` |
+| `--debug`                 | Enable verbose Waku debugging              | `false` |
+| `--log-to-file`           | Save logs to `broadcaster-viewer.log`      | `false` |
 
 ## Understanding the Data
 

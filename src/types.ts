@@ -7,6 +7,7 @@ export interface AppConfig {
    * The client waits for a broadcast from this signer to establish a baseline.
    */
   trustedFeeSigner?: string[];
+  extendedStaticNodes?: boolean;
   pubSubTopic?: string;
   refreshInterval: number;
   tokenAddress?: string; // Optional token to query for specific fees
