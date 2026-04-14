@@ -37,6 +37,7 @@ program
   .option('--native-only', 'Filter to show only native token fees')
   .option('--debug', 'Enable debug logging')
   .option('--log-to-file', 'Enable logging to file')
+  .option('--screenshot-dir <path>', 'Directory for CSV table snapshots')
   .action(async (options) => {
     let config: AppConfig = {
       chainType: DEFAULT_CHAIN_TYPE,
@@ -47,6 +48,7 @@ program
       filterNative: options.nativeOnly || false,
       debug: options.debug || false,
       fileLogging: options.logToFile || false,
+      screenshotDir: 'screenshots',
     };
 
     // Load from config file if present
@@ -70,6 +72,7 @@ program
     // Override with CLI args
     if (options.chainId) config.chainId = options.chainId;
     if (options.extendedStaticNodes) config.extendedStaticNodes = true;
+    if (options.screenshotDir) config.screenshotDir = options.screenshotDir;
 
     const signers: string[] = [];
 
@@ -118,7 +121,11 @@ program
 
     // Render the TUI
     const { waitUntilExit } = render(
-      React.createElement(App, { monitor, chainId: config.chainId })
+      React.createElement(App, {
+        monitor,
+        chainId: config.chainId,
+        screenshotDir: config.screenshotDir || 'screenshots',
+      })
     );
 
     // Start monitoring

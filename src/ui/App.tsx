@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
+import fs from 'fs';
+import path from 'path';
 import { BroadcasterMonitor } from '../monitor.js';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { BroadcasterTable } from './BroadcasterTable.js';
@@ -7,10 +9,16 @@ import { AddressList } from './AddressList.js';
 import { LogPanel } from './LogPanel.js';
 import { getNetworkName } from '../networks.js';
 import { identifySignerSet } from '../signers.js';
+import {
+  createBroadcasterSnapshotCsv,
+  DEFAULT_BROADCASTER_TABLE_STATE,
+  processBroadcasters,
+} from './broadcaster-table-data.js';
 
 interface Props {
   monitor: BroadcasterMonitor;
   chainId: number;
+  screenshotDir: string;
 }
 
 interface Log {
@@ -21,7 +29,7 @@ interface Log {
 
 type FocusArea = 'table' | 'address' | 'logs';
 
-export const App: React.FC<Props> = ({ monitor, chainId }) => {
+export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const { stdout } = useStdout();
   const [dimensions, setDimensions] = useState({
     columns: stdout.columns,
@@ -53,6 +61,11 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
   const [focus, setFocus] = useState<FocusArea>('table');
   const [selectedAddresses, setSelectedAddresses] = useState<Set<string>>(new Set());
   const [filterMode, setFilterMode] = useState(false);
+  const [tableState, setTableState] = useState(DEFAULT_BROADCASTER_TABLE_STATE);
+
+  const addAppLog = (message: string, type: Log['type'] = 'info') => {
+    setLogs((prev) => [...prev, { message, type, timestamp: new Date() }]);
+  };
 
   useEffect(() => {
     const onUpdate = (data: SelectedBroadcaster[]) => setBroadcasters(data);
@@ -80,6 +93,27 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
     return currentData.filter((b) => selectedAddresses.has(b.railgunAddress));
   }, [currentData, selectedAddresses]);
 
+  const processedBroadcasters = useMemo(() => {
+    return processBroadcasters(filteredBroadcasters, chainId, tableState);
+  }, [filteredBroadcasters, chainId, tableState]);
+
+  const writeSnapshot = () => {
+    const targetDirectory = path.resolve(process.cwd(), screenshotDir);
+    const timestamp = new Date().toISOString().replace(/[:]/g, '-');
+    const filePath = path.join(targetDirectory, `broadcaster-snapshot-${timestamp}.csv`);
+
+    try {
+      fs.mkdirSync(targetDirectory, { recursive: true });
+      fs.writeFileSync(
+        filePath,
+        createBroadcasterSnapshotCsv(processedBroadcasters, chainId) + '\n'
+      );
+      addAppLog(`Snapshot saved: ${filePath}`, 'success');
+    } catch (error) {
+      addAppLog(`Snapshot failed: ${(error as Error).message}`, 'error');
+    }
+  };
+
   useInput((input, key) => {
     if (key.escape) {
       if (filterMode) {
@@ -92,6 +126,11 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
           setFrozenBroadcasters(broadcasters);
         }
       }
+      return;
+    }
+
+    if (focus === 'table' && !filterMode && input === 's') {
+      writeSnapshot();
       return;
     }
 
@@ -181,6 +220,8 @@ export const App: React.FC<Props> = ({ monitor, chainId }) => {
             width={tableWidth}
             filterMode={filterMode}
             setFilterMode={setFilterMode}
+            tableState={tableState}
+            setTableState={setTableState}
             trustedFeeSigners={status.trustedFeeSigners}
           />
         </Box>

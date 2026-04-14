@@ -2,9 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
-import { formatUnits } from 'ethers';
-import { getTokenName, isChainNativeToken, getTokenDecimals } from '../tokens.js';
+import { getTokenName } from '../tokens.js';
 import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from '../signers.js';
+import {
+  BroadcasterTableState,
+  SortKey,
+  processBroadcasters,
+  formatBroadcasterFee,
+} from './broadcaster-table-data.js';
 
 interface Props {
   broadcasters: SelectedBroadcaster[];
@@ -14,10 +19,10 @@ interface Props {
   width: number;
   filterMode: boolean;
   setFilterMode: (mode: boolean) => void;
+  tableState: BroadcasterTableState;
+  setTableState: React.Dispatch<React.SetStateAction<BroadcasterTableState>>;
   trustedFeeSigners: string[];
 }
-
-type SortKey = 'address' | 'token' | 'fee' | 'expiration' | 'reliability' | 'wallets' | 'adapt';
 
 const truncateMiddle = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
@@ -33,13 +38,13 @@ export const BroadcasterTable: React.FC<Props> = ({
   width,
   filterMode,
   setFilterMode,
+  tableState,
+  setTableState,
   trustedFeeSigners,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [offset, setOffset] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>('fee');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [filterQuery, setFilterQuery] = useState('');
+  const { filterQuery, sortKey, sortDirection } = tableState;
 
   // Calculate visible rows
   const availableHeight = height - (filterMode ? 6 : 4);
@@ -57,65 +62,8 @@ export const BroadcasterTable: React.FC<Props> = ({
 
   // Filter and Sort
   const processedBroadcasters = useMemo(() => {
-    let filtered = broadcasters;
-    if (filterQuery) {
-      const lowerQuery = filterQuery.toLowerCase();
-      filtered = broadcasters.filter(
-        (b) =>
-          b.railgunAddress.toLowerCase().includes(lowerQuery) ||
-          b.tokenAddress.toLowerCase().includes(lowerQuery) ||
-          (getTokenName(chainId, b.tokenAddress) || '').toLowerCase().includes(lowerQuery)
-      );
-    }
-
-    return filtered.sort((a, b) => {
-      let valA: any = '';
-      let valB: any = '';
-
-      switch (sortKey) {
-        case 'address':
-          valA = a.railgunAddress;
-          valB = b.railgunAddress;
-          break;
-        case 'token':
-          valA = getTokenName(chainId, a.tokenAddress) || a.tokenAddress;
-          valB = getTokenName(chainId, b.tokenAddress) || b.tokenAddress;
-          break;
-        case 'fee':
-          try {
-            valA = BigInt(a.tokenFee.feePerUnitGas ?? 0);
-          } catch {
-            valA = BigInt(0);
-          }
-          try {
-            valB = BigInt(b.tokenFee.feePerUnitGas ?? 0);
-          } catch {
-            valB = BigInt(0);
-          }
-          break;
-        case 'expiration':
-          valA = a.tokenFee.expiration;
-          valB = b.tokenFee.expiration;
-          break;
-        case 'reliability':
-          valA = a.tokenFee.reliability;
-          valB = b.tokenFee.reliability;
-          break;
-        case 'wallets':
-          valA = a.tokenFee.availableWallets;
-          valB = b.tokenFee.availableWallets;
-          break;
-        case 'adapt':
-          valA = a.tokenFee.relayAdapt;
-          valB = b.tokenFee.relayAdapt;
-          break;
-      }
-
-      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [broadcasters, filterQuery, sortKey, sortDirection, chainId]);
+    return processBroadcasters(broadcasters, chainId, tableState);
+  }, [broadcasters, chainId, tableState]);
 
   // Reset/adjust selection if list shrinks
   useEffect(() => {
@@ -144,12 +92,16 @@ export const BroadcasterTable: React.FC<Props> = ({
 
     // Sorting keys
     const handleSort = (key: SortKey) => {
-      if (sortKey === key) {
-        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-      } else {
-        setSortKey(key);
-        setSortDirection('asc');
-      }
+      setTableState((currentState) => ({
+        ...currentState,
+        sortKey: key,
+        sortDirection:
+          currentState.sortKey === key
+            ? currentState.sortDirection === 'asc'
+              ? 'desc'
+              : 'asc'
+            : 'asc',
+      }));
     };
 
     if (input === '1') handleSort('address');
@@ -272,27 +224,7 @@ export const BroadcasterTable: React.FC<Props> = ({
 
           const reliability = Math.round(b.tokenFee.reliability * 100) + '%';
           const relayAdapt = truncateMiddle(b.tokenFee.relayAdapt, Math.max(5, colAdapt - 1));
-
-          // Format Fee
-          const decimals = getTokenDecimals(chainId, b.tokenAddress);
-          const feeRaw = b.tokenFee.feePerUnitGas;
-          let feeFormatted = '';
-
-          if (isChainNativeToken(chainId, b.tokenAddress)) {
-            const feeGwei = parseFloat(formatUnits(feeRaw, 9));
-            feeFormatted = `${feeGwei.toFixed(2)} Gwei`;
-          } else {
-            const val = parseFloat(formatUnits(feeRaw, decimals));
-            let valStr = '';
-            if (val === 0) {
-              valStr = '0';
-            } else if (val < 0.0001) {
-              valStr = val.toExponential(2);
-            } else {
-              valStr = val.toFixed(6).replace(/\.?0+$/, '');
-            }
-            feeFormatted = `${valStr} ${tokenName || ''}`;
-          }
+          const feeFormatted = formatBroadcasterFee(b, chainId);
 
           // --- Highlighting Logic ---
           const isTrusted = trustedFeeSigners.includes(b.railgunAddress);
@@ -382,7 +314,9 @@ export const BroadcasterTable: React.FC<Props> = ({
           <Text>Filter: </Text>
           <TextInput
             value={filterQuery}
-            onChange={setFilterQuery}
+            onChange={(value) =>
+              setTableState((currentState) => ({ ...currentState, filterQuery: value }))
+            }
             focus={filterMode && isFocused}
             placeholder="Address, Token, or Name"
           />

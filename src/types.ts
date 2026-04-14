@@ -14,6 +14,7 @@ export interface AppConfig {
   filterNative?: boolean;
   debug?: boolean;
   fileLogging?: boolean;
+  screenshotDir?: string;
 }
 
 export interface BroadcasterInfo {

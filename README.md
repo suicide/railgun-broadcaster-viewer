@@ -14,6 +14,7 @@ connectivity, and reliability scores across different chains.
   - Sort by any column (Fee, Reliability, Token, etc.).
   - Filter by text (Address, Token).
   - Filter by specific Broadcaster Address.
+- **CSV Snapshots**: Save the current table view to a timestamped CSV with full-length addresses.
 - **Deep Inspection**: View detailed fees, expiration times, and token support.
 - **Log Inspection**: Scrollable, pausable log panel for debugging connection events.
 - **Cross-Chain**: Configurable for Ethereum, Polygon, Arbitrum, Sepolia, etc.
@@ -90,6 +91,7 @@ The status line will indicate the currently active signer set: `[RAILWAY]`, `[TE
 | **Table Actions**   |                                                                              |
 | `1` - `7`           | Sort by specific column (press again to toggle ASC/DESC)                     |
 | `/`                 | **Search Mode**: Type to filter table by text                                |
+| `s`                 | Save a CSV snapshot of the current table view                                |
 | **Address List**    |                                                                              |
 | `Space`             | Toggle selection of an address (filters table to show only that broadcaster) |
 | **Global**          |                                                                              |
@@ -100,17 +102,18 @@ The status line will indicate the currently active signer set: `[RAILWAY]`, `[TE
 
 Options can be passed via CLI flags or a `config.json` file.
 
-| Option                    | Description                                | Default |
-| :------------------------ | :----------------------------------------- | :------ |
-| `--chain-id <n>`          | Chain ID to monitor                        | `1`     |
-| `--railway`               | Add Railway Wallet trusted signers         | `false` |
-| `--terminal`              | Add Terminal Wallet trusted signers        | `false` |
-| `--signer <key>`          | Custom Trusted Fee Signer Key (repeatable) | `[]`    |
-| `--no-signer`             | Run without any Trusted Fee Signer         | `true`  |
-| `--extended-static-nodes` | Add the extended static Waku peer set      | `false` |
-| `--refresh <ms>`          | Refresh interval in milliseconds           | `30000` |
-| `--debug`                 | Enable verbose Waku debugging              | `false` |
-| `--log-to-file`           | Save logs to `broadcaster-viewer.log`      | `false` |
+| Option                    | Description                                | Default       |
+| :------------------------ | :----------------------------------------- | :------------ |
+| `--chain-id <n>`          | Chain ID to monitor                        | `1`           |
+| `--railway`               | Add Railway Wallet trusted signers         | `false`       |
+| `--terminal`              | Add Terminal Wallet trusted signers        | `false`       |
+| `--signer <key>`          | Custom Trusted Fee Signer Key (repeatable) | `[]`          |
+| `--no-signer`             | Run without any Trusted Fee Signer         | `true`        |
+| `--extended-static-nodes` | Add the extended static Waku peer set      | `false`       |
+| `--refresh <ms>`          | Refresh interval in milliseconds           | `30000`       |
+| `--debug`                 | Enable verbose Waku debugging              | `false`       |
+| `--log-to-file`           | Save logs to `broadcaster-viewer.log`      | `false`       |
+| `--screenshot-dir <path>` | Directory for CSV table snapshots          | `screenshots` |
 
 ## Understanding the Data
 
