@@ -13,6 +13,7 @@ interface DetailLine {
   key: string;
   text: string;
   color?: string;
+  bold?: boolean;
 }
 
 const wrapLine = (text: string, width: number): string[] => {
@@ -86,13 +87,14 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
       });
     };
 
-    lines.push({ key: 'title', text: 'Peer Details' });
+    lines.push({ key: 'title', text: 'Peer Details', color: 'magenta', bold: true });
 
     if (!peer) {
       lines.push({ key: 'empty', text: 'No peer selected.', color: 'yellow' });
       return lines;
     }
 
+    lines.push({ key: 'overview-header', text: 'Overview', color: 'cyan', bold: true });
     addField('Peer ID', peer.peerId);
     addField('State', peer.state);
     addField('Role', peer.role);
@@ -103,12 +105,25 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
     addField('Direct', peer.isDirectPeer ? 'yes' : 'no');
     addField('Store', peer.isStorePeer ? 'yes' : 'no');
     addField('Peer Exchange', peer.supportsPeerExchange ? 'yes' : 'no');
+    lines.push({ key: 'spacer-overview', text: '' });
+
+    lines.push({ key: 'capabilities-header', text: 'Capabilities', color: 'cyan', bold: true });
     addList('Capabilities', peer.capabilities);
+    lines.push({ key: 'spacer-capabilities', text: '' });
+
+    lines.push({ key: 'tags-header', text: 'Tags', color: 'cyan', bold: true });
     addList('Tags', peer.tags);
+    lines.push({ key: 'spacer-tags', text: '' });
+
+    lines.push({ key: 'protocols-header', text: 'Protocols', color: 'cyan', bold: true });
     addList('Protocols', peer.protocols);
+    lines.push({ key: 'spacer-protocols', text: '' });
+
+    lines.push({ key: 'multiaddrs-header', text: 'Multiaddrs', color: 'cyan', bold: true });
     addList('Multiaddrs', peer.multiaddrs);
 
     if (!peer.isExplicit) {
+      lines.push({ key: 'spacer-note', text: '' });
       appendWrapped(
         lines,
         'note',
@@ -169,7 +184,7 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
       borderColor={isFocused ? 'green' : 'white'}
     >
       {visibleLines.map((line) => (
-        <Text key={line.key} color={line.color} wrap="wrap">
+        <Text key={line.key} color={line.color} bold={line.bold} wrap="wrap">
           {line.text}
         </Text>
       ))}

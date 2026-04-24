@@ -8,10 +8,10 @@ import {
   PeerCapability,
   PeerStatusSnapshot,
 } from './types.js';
-import { COMBINED_EXTENDED_STATIC_NODES } from './static-nodes.js';
-
-const DEFAULT_NODE_DNS_DISCOVERY_URL =
-  'enrtree://APMYHUVNQWHJNPI5L2KQ765EMCKUAMRWPUH3U2QIKPK6XEV3OW442@discovery.rootedinprivacy.com';
+import {
+  COMBINED_EXTENDED_STATIC_NODES,
+  DEFAULT_NODE_DNS_DISCOVERY_URLS,
+} from './waku-connection-config.js';
 
 type PeerStoreEntry = {
   id?: { toString?: () => string } | string;
@@ -102,7 +102,7 @@ const getConfiguredStoreMultiaddrs = (_config: AppConfig): string[] => {
 };
 
 const getDnsDiscoveryUrls = (): string[] => {
-  return [DEFAULT_NODE_DNS_DISCOVERY_URL];
+  return [...DEFAULT_NODE_DNS_DISCOVERY_URLS];
 };
 
 const buildConfiguredPeerEntries = (

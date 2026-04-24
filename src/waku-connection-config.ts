@@ -1,3 +1,8 @@
+export const DEFAULT_NODE_DNS_DISCOVERY_URL =
+  'enrtree://APMYHUVNQWHJNPI5L2KQ765EMCKUAMRWPUH3U2QIKPK6XEV3OW442@discovery.rootedinprivacy.com';
+
+export const DEFAULT_NODE_DNS_DISCOVERY_URLS = [DEFAULT_NODE_DNS_DISCOVERY_URL] as const;
+
 export const DEFAULT_STATIC_NODES = [
   '/dns4/relay-a.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAmFbD2ZvAFi2j9jjDo6g4HFbQAhfjDfnTTrbyRGQRmtG7x',
   '/dns4/relay-b.rootedinprivacy.com/tcp/8000/wss/p2p/16Uiu2HAmPtEAoPPok7VLrpNNC6t92ZQFqLndHvkdx6Fk3CxA4MaG',

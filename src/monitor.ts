@@ -10,7 +10,7 @@ import {
 } from '@railgun-community/shared-models';
 import { AppConfig, PeerStatusSnapshot } from './types';
 import { isChainNativeToken } from './tokens';
-import { COMBINED_EXTENDED_STATIC_NODES } from './static-nodes';
+import { COMBINED_EXTENDED_STATIC_NODES } from './waku-connection-config';
 import { createEmptyPeerStatusSnapshot, derivePeerStatusSnapshot } from './peer-status-data';
 import fs from 'fs';
 import path from 'path';
