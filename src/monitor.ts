@@ -8,9 +8,10 @@ import {
   BroadcasterConnectionStatus,
   SelectedBroadcaster,
 } from '@railgun-community/shared-models';
-import { AppConfig } from './types';
+import { AppConfig, PeerStatusSnapshot } from './types';
 import { isChainNativeToken } from './tokens';
 import { COMBINED_EXTENDED_STATIC_NODES } from './static-nodes';
+import { createEmptyPeerStatusSnapshot, derivePeerStatusSnapshot } from './peer-status-data';
 import fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
@@ -26,6 +27,7 @@ export class BroadcasterMonitor extends EventEmitter {
   private lastScanTime: Date | null = null;
   private connectionStatus: string = 'Initializing...';
   private meshPeerCount: number = 0;
+  private peerStatus: PeerStatusSnapshot;
 
   constructor(config: AppConfig) {
     super();
@@ -34,6 +36,7 @@ export class BroadcasterMonitor extends EventEmitter {
       type: config.chainType,
       id: config.chainId,
     };
+    this.peerStatus = createEmptyPeerStatusSnapshot(config);
   }
 
   public getBroadcasters(): SelectedBroadcaster[] {
@@ -45,12 +48,14 @@ export class BroadcasterMonitor extends EventEmitter {
     peers: number;
     lastScan: Date | null;
     trustedFeeSigners: string[];
+    peerStatus: PeerStatusSnapshot;
   } {
     return {
       status: this.connectionStatus,
       peers: this.meshPeerCount,
       lastScan: this.lastScanTime,
       trustedFeeSigners: this.config.trustedFeeSigner ?? [],
+      peerStatus: this.peerStatus,
     };
   }
 
@@ -157,6 +162,15 @@ export class BroadcasterMonitor extends EventEmitter {
       } catch (e) {
         this.meshPeerCount = 0;
       }
+
+      this.peerStatus = await derivePeerStatusSnapshot(
+        this.config,
+        WakuBroadcasterClient.getWakuCore() as any,
+        {
+          pubSubTopic: this.config.pubSubTopic,
+          contentTopics: WakuBroadcasterClient.getContentTopics(),
+        }
+      );
 
       this.emit('update', this.broadcasters);
       this.emit('status', this.getStatus());

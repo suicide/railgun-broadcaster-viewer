@@ -7,8 +7,12 @@ import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { BroadcasterTable } from './BroadcasterTable.js';
 import { AddressList } from './AddressList.js';
 import { LogPanel } from './LogPanel.js';
+import { PeerDetails } from './PeerDetails.js';
+import { DEFAULT_PEER_TABLE_STATE, PeerTable } from './PeerTable.js';
 import { getNetworkName } from '../networks.js';
 import { identifySignerSet } from '../signers.js';
+import { PeerStatusSnapshot } from '../types.js';
+import { PeerTableRow, PeerTableState } from './peer-table-data.js';
 import {
   createBroadcasterSnapshotCsv,
   DEFAULT_BROADCASTER_TABLE_STATE,
@@ -27,7 +31,8 @@ interface Log {
   timestamp: Date;
 }
 
-type FocusArea = 'table' | 'address' | 'logs';
+type FocusArea = 'table' | 'address' | 'logs' | 'peers' | 'peer-details';
+type ViewMode = 'broadcasters' | 'peers';
 
 export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const { stdout } = useStdout();
@@ -57,11 +62,48 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
     peers: 0,
     lastScan: null as Date | null,
     trustedFeeSigners: [] as string[],
+    peerStatus: {
+      runtime: {
+        hasWaku: false,
+        isStarted: false,
+        useDNSDiscovery: true,
+        dnsDiscoveryUrls: [],
+      },
+      routing: {
+        contentTopics: [],
+      },
+      connections: {
+        count: 0,
+        peers: [],
+      },
+      peerStore: {
+        count: 0,
+        bootstrapCount: 0,
+        peerExchangeCount: 0,
+        bootstrapPeers: [],
+        peerExchangePeers: [],
+      },
+      connectedPeers: [],
+      configuredPeers: [],
+      summary: {
+        connectedPeerCount: 0,
+        peerExchangeCapableCount: 0,
+        configuredDirectPeerCount: 0,
+        configuredDirectConnectedCount: 0,
+        configuredStorePeerCount: 0,
+        configuredStoreConnectedCount: 0,
+        configuredUnavailableCount: 0,
+      },
+    } as PeerStatusSnapshot,
   });
-  const [focus, setFocus] = useState<FocusArea>('table');
+  const [focus, setFocus] = useState<FocusArea | 'peers'>('table');
+  const [viewMode, setViewMode] = useState<ViewMode>('broadcasters');
   const [selectedAddresses, setSelectedAddresses] = useState<Set<string>>(new Set());
   const [filterMode, setFilterMode] = useState(false);
   const [tableState, setTableState] = useState(DEFAULT_BROADCASTER_TABLE_STATE);
+  const [peerFilterMode, setPeerFilterMode] = useState(false);
+  const [peerTableState, setPeerTableState] = useState<PeerTableState>(DEFAULT_PEER_TABLE_STATE);
+  const [selectedPeer, setSelectedPeer] = useState<PeerTableRow | null>(null);
 
   const addAppLog = (message: string, type: Log['type'] = 'info') => {
     setLogs((prev) => [...prev, { message, type, timestamp: new Date() }]);
@@ -116,7 +158,9 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
 
   useInput((input, key) => {
     if (key.escape) {
-      if (filterMode) {
+      if (viewMode === 'peers' && peerFilterMode) {
+        setPeerFilterMode(false);
+      } else if (filterMode) {
         setFilterMode(false);
       } else {
         // Toggle Freeze
@@ -129,22 +173,48 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
       return;
     }
 
-    if (focus === 'table' && !filterMode && input === 's') {
+    if (input === 'p') {
+      setViewMode((current) => {
+        const next = current === 'broadcasters' ? 'peers' : 'broadcasters';
+        if (next === 'peers' && focus !== 'logs') {
+          setFocus('peers');
+          setFilterMode(false);
+        }
+        if (next === 'broadcasters' && focus === 'peers') {
+          setFocus('table');
+          setPeerFilterMode(false);
+        }
+        return next;
+      });
+      return;
+    }
+
+    if (viewMode === 'broadcasters' && focus === 'table' && !filterMode && input === 's') {
       writeSnapshot();
       return;
     }
 
     if (key.tab) {
-      if (key.shift) {
-        // Prev focus
-        if (focus === 'table') setFocus('logs');
-        else if (focus === 'logs') setFocus('address');
-        else setFocus('table');
+      if (viewMode === 'peers') {
+        if (key.shift) {
+          if (focus === 'peers') setFocus('logs');
+          else if (focus === 'logs') setFocus('peer-details');
+          else setFocus('peers');
+        } else {
+          if (focus === 'peers') setFocus('peer-details');
+          else if (focus === 'peer-details') setFocus('logs');
+          else setFocus('peers');
+        }
       } else {
-        // Next focus
-        if (focus === 'table') setFocus('address');
-        else if (focus === 'address') setFocus('logs');
-        else setFocus('table');
+        if (key.shift) {
+          if (focus === 'table') setFocus('logs');
+          else if (focus === 'logs') setFocus('address');
+          else setFocus('table');
+        } else {
+          if (focus === 'table') setFocus('address');
+          else if (focus === 'address') setFocus('logs');
+          else setFocus('table');
+        }
       }
     }
   });
@@ -193,8 +263,12 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
           </Text>{' '}
           ({chainId}) | Status:{' '}
           <Text color={status.status === 'Connected' ? 'green' : 'yellow'}>{status.status}</Text> |
-          Peers: {status.peers} | Last Scan:{' '}
+          View: {viewMode} | Peers: {status.peers} | Last Scan:{' '}
           {status.lastScan ? status.lastScan.toLocaleTimeString() : 'Pending'}
+          {' | '}PX: {status.peerStatus.summary.peerExchangeCapableCount}
+          {' | '}Direct: {status.peerStatus.summary.configuredDirectConnectedCount}/
+          {status.peerStatus.summary.configuredDirectPeerCount}
+          {' | '}Peer Mode: {peerTableState.mode}
           {isFrozen && (
             <Text color="cyan" bold>
               {' '}
@@ -209,36 +283,60 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
       </Box>
 
       {/* Main Content Area */}
-      <Box flexDirection="row" height={contentHeight}>
-        {/* Left: Table */}
-        <Box width={tableWidth} flexDirection="column">
-          <BroadcasterTable
-            broadcasters={filteredBroadcasters}
-            chainId={chainId}
-            isFocused={focus === 'table'}
-            height={contentHeight}
-            width={tableWidth}
-            filterMode={filterMode}
-            setFilterMode={setFilterMode}
-            tableState={tableState}
-            setTableState={setTableState}
-            trustedFeeSigners={status.trustedFeeSigners}
-          />
-        </Box>
+      {viewMode === 'broadcasters' ? (
+        <Box flexDirection="row" height={contentHeight}>
+          <Box width={tableWidth} flexDirection="column">
+            <BroadcasterTable
+              broadcasters={filteredBroadcasters}
+              chainId={chainId}
+              isFocused={focus === 'table'}
+              height={contentHeight}
+              width={tableWidth}
+              filterMode={filterMode}
+              setFilterMode={setFilterMode}
+              tableState={tableState}
+              setTableState={setTableState}
+              trustedFeeSigners={status.trustedFeeSigners}
+            />
+          </Box>
 
-        {/* Right: Address List */}
-        <Box width={addressWidth} flexDirection="column">
-          <AddressList
-            broadcasters={currentData}
-            isFocused={focus === 'address'}
-            height={contentHeight}
-            width={addressWidth}
-            selectedAddresses={selectedAddresses}
-            toggleAddress={toggleAddress}
-            trustedFeeSigners={status.trustedFeeSigners}
-          />
+          <Box width={addressWidth} flexDirection="column">
+            <AddressList
+              broadcasters={currentData}
+              isFocused={focus === 'address'}
+              height={contentHeight}
+              width={addressWidth}
+              selectedAddresses={selectedAddresses}
+              toggleAddress={toggleAddress}
+              trustedFeeSigners={status.trustedFeeSigners}
+            />
+          </Box>
         </Box>
-      </Box>
+      ) : (
+        <Box flexDirection="row" height={contentHeight}>
+          <Box width={tableWidth} flexDirection="column">
+            <PeerTable
+              peerStatus={status.peerStatus}
+              isFocused={focus === 'peers'}
+              height={contentHeight}
+              width={tableWidth}
+              filterMode={peerFilterMode}
+              setFilterMode={setPeerFilterMode}
+              tableState={peerTableState}
+              setTableState={setPeerTableState}
+              onSelectedPeerChange={setSelectedPeer}
+            />
+          </Box>
+          <Box width={addressWidth} flexDirection="column">
+            <PeerDetails
+              peer={selectedPeer}
+              isFocused={focus === 'peer-details'}
+              height={contentHeight}
+              width={addressWidth}
+            />
+          </Box>
+        </Box>
+      )}
 
       {/* Bottom: Logs */}
       <Box height={10} width="100%">
