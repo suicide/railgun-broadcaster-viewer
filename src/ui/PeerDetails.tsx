@@ -75,8 +75,7 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
       });
     };
 
-    const addList = (label: string, values: string[]) => {
-      lines.push({ key: `${label}-header`, text: `${label}:` });
+    const addListItems = (label: string, values: string[]) => {
       if (values.length === 0) {
         lines.push({ key: `${label}-empty`, text: '  none', color: 'gray' });
         return;
@@ -105,25 +104,20 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
     addField('Direct', peer.isDirectPeer ? 'yes' : 'no');
     addField('Store', peer.isStorePeer ? 'yes' : 'no');
     addField('Peer Exchange', peer.supportsPeerExchange ? 'yes' : 'no');
-    lines.push({ key: 'spacer-overview', text: '' });
 
     lines.push({ key: 'capabilities-header', text: 'Capabilities', color: 'cyan', bold: true });
-    addList('Capabilities', peer.capabilities);
-    lines.push({ key: 'spacer-capabilities', text: '' });
+    addListItems('Capabilities', peer.capabilities);
 
     lines.push({ key: 'tags-header', text: 'Tags', color: 'cyan', bold: true });
-    addList('Tags', peer.tags);
-    lines.push({ key: 'spacer-tags', text: '' });
+    addListItems('Tags', peer.tags);
 
     lines.push({ key: 'protocols-header', text: 'Protocols', color: 'cyan', bold: true });
-    addList('Protocols', peer.protocols);
-    lines.push({ key: 'spacer-protocols', text: '' });
+    addListItems('Protocols', peer.protocols);
 
     lines.push({ key: 'multiaddrs-header', text: 'Multiaddrs', color: 'cyan', bold: true });
-    addList('Multiaddrs', peer.multiaddrs);
+    addListItems('Multiaddrs', peer.multiaddrs);
 
     if (!peer.isExplicit) {
-      lines.push({ key: 'spacer-note', text: '' });
       appendWrapped(
         lines,
         'note',
@@ -136,17 +130,40 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
     return lines;
   }, [innerWidth, peer]);
 
+  const visualLines = useMemo<DetailLine[]>(() => {
+    const expanded: DetailLine[] = [];
+
+    for (const line of lines) {
+      if (line.text === '') {
+        expanded.push(line);
+        continue;
+      }
+
+      const wrapped = wrapLine(line.text, innerWidth);
+      wrapped.forEach((text, index) => {
+        expanded.push({
+          key: `${line.key}-visual-${index}`,
+          text,
+          color: line.color,
+          bold: line.bold,
+        });
+      });
+    }
+
+    return expanded;
+  }, [innerWidth, lines]);
+
   useEffect(() => {
-    const maxOffset = Math.max(0, lines.length - visibleRows);
+    const maxOffset = Math.max(0, visualLines.length - visibleRows);
     if (offset > maxOffset) {
       setOffset(maxOffset);
     }
-  }, [lines.length, offset, visibleRows]);
+  }, [offset, visualLines.length, visibleRows]);
 
   useInput((input, key) => {
     if (!isFocused) return;
 
-    const maxOffset = Math.max(0, lines.length - visibleRows);
+    const maxOffset = Math.max(0, visualLines.length - visibleRows);
 
     if (key.downArrow || input === 'j') {
       setOffset(Math.min(maxOffset, offset + 1));
@@ -173,7 +190,7 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
     }
   });
 
-  const visibleLines = lines.slice(offset, offset + visibleRows);
+  const visibleLines = visualLines.slice(offset, offset + visibleRows);
 
   return (
     <Box
@@ -184,7 +201,7 @@ export const PeerDetails: React.FC<Props> = ({ peer, isFocused, height, width })
       borderColor={isFocused ? 'green' : 'white'}
     >
       {visibleLines.map((line) => (
-        <Text key={line.key} color={line.color} bold={line.bold} wrap="wrap">
+        <Text key={line.key} color={line.color} bold={line.bold} wrap="truncate-end">
           {line.text}
         </Text>
       ))}
