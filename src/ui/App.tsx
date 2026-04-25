@@ -6,6 +6,7 @@ import { BroadcasterMonitor } from '../monitor.js';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { BroadcasterTable } from './BroadcasterTable.js';
 import { AddressList } from './AddressList.js';
+import { HelpModal } from './HelpModal.js';
 import { LogPanel } from './LogPanel.js';
 import { PeerDetails } from './PeerDetails.js';
 import { DEFAULT_PEER_TABLE_STATE, PeerTable } from './PeerTable.js';
@@ -104,6 +105,7 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const [peerFilterMode, setPeerFilterMode] = useState(false);
   const [peerTableState, setPeerTableState] = useState<PeerTableState>(DEFAULT_PEER_TABLE_STATE);
   const [selectedPeer, setSelectedPeer] = useState<PeerTableRow | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const addAppLog = (message: string, type: Log['type'] = 'info') => {
     setLogs((prev) => [...prev, { message, type, timestamp: new Date() }]);
@@ -157,6 +159,18 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   };
 
   useInput((input, key) => {
+    if (input === '?') {
+      setShowHelp((current) => !current);
+      return;
+    }
+
+    if (showHelp) {
+      if (key.escape) {
+        setShowHelp(false);
+      }
+      return;
+    }
+
     if (key.escape) {
       if (viewMode === 'peers' && peerFilterMode) {
         setPeerFilterMode(false);
@@ -342,6 +356,10 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
       <Box height={10} width="100%">
         <LogPanel logs={logs} isFocused={focus === 'logs'} />
       </Box>
+
+      {showHelp && (
+        <HelpModal viewMode={viewMode} width={dimensions.columns} height={dimensions.rows} />
+      )}
     </Box>
   );
 };
