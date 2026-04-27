@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import {
+  buildOutOfBoundsBroadcasterSet,
   createBroadcasterSnapshotCsv,
   processBroadcasters,
   type BroadcasterTableState,
 } from './broadcaster-table-data';
+import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from '../signers';
 
 function createBroadcaster(
   railgunAddress: string,
@@ -99,5 +101,96 @@ describe('broadcaster table data', () => {
     expect(lines[1]).toContain('USDT');
     expect(lines[1]).toContain('2026-01-02T03:04:05.000Z');
     expect(lines[1]).toContain('"waku://peer,quoted"');
+  });
+
+  it('flags non-trusted quotes below and above the trusted band', () => {
+    const trustedA = createBroadcaster(RAILWAY_SIGNERS[0], '0xtoken', {
+      feePerUnitGas: '110',
+    });
+    const trustedB = createBroadcaster(TERMINAL_SIGNERS[0], '0xtoken', {
+      feePerUnitGas: '100',
+    });
+    const inBounds = createBroadcaster('zk1-in-bounds', '0xtoken', {
+      feePerUnitGas: '95',
+    });
+    const tooLow = createBroadcaster('zk1-too-low', '0xtoken', {
+      feePerUnitGas: '93',
+    });
+    const tooHigh = createBroadcaster('zk1-too-high', '0xtoken', {
+      feePerUnitGas: '137',
+    });
+
+    const outOfBounds = buildOutOfBoundsBroadcasterSet([
+      trustedA,
+      trustedB,
+      inBounds,
+      tooLow,
+      tooHigh,
+    ]);
+
+    expect(outOfBounds.has(inBounds)).toBe(false);
+    expect(outOfBounds.has(tooLow)).toBe(true);
+    expect(outOfBounds.has(tooHigh)).toBe(true);
+  });
+
+  it('keeps exact lower and upper boundary quotes in bounds', () => {
+    const trusted = createBroadcaster(RAILWAY_SIGNERS[0], '0xtoken', {
+      feePerUnitGas: '100',
+    });
+    const lowerBoundary = createBroadcaster('zk1-lower-boundary', '0xtoken', {
+      feePerUnitGas: '90',
+    });
+    const upperBoundary = createBroadcaster('zk1-upper-boundary', '0xtoken', {
+      feePerUnitGas: '130',
+    });
+
+    const outOfBounds = buildOutOfBoundsBroadcasterSet([trusted, lowerBoundary, upperBoundary]);
+
+    expect(outOfBounds.has(lowerBoundary)).toBe(false);
+    expect(outOfBounds.has(upperBoundary)).toBe(false);
+  });
+
+  it('does not flag quotes when there is no trusted reference for the token', () => {
+    const untrusted = createBroadcaster('zk1-untrusted', '0xno-trusted-reference', {
+      feePerUnitGas: '999',
+    });
+
+    const outOfBounds = buildOutOfBoundsBroadcasterSet([untrusted]);
+
+    expect(outOfBounds.has(untrusted)).toBe(false);
+  });
+
+  it('never flags trusted signer rows', () => {
+    const trusted = createBroadcaster(RAILWAY_SIGNERS[0], '0xtoken', {
+      feePerUnitGas: '1000',
+    });
+    const untrusted = createBroadcaster('zk1-untrusted', '0xtoken', {
+      feePerUnitGas: '1400',
+    });
+
+    const outOfBounds = buildOutOfBoundsBroadcasterSet([trusted, untrusted]);
+
+    expect(outOfBounds.has(trusted)).toBe(false);
+    expect(outOfBounds.has(untrusted)).toBe(true);
+  });
+
+  it('deduplicates overlapping community signer memberships', () => {
+    const overlappingTrusted = createBroadcaster(TERMINAL_SIGNERS[0], '0xtoken', {
+      feePerUnitGas: '100',
+    });
+    const secondTrusted = createBroadcaster(RAILWAY_SIGNERS[0], '0xtoken', {
+      feePerUnitGas: '110',
+    });
+    const slightlyLow = createBroadcaster('zk1-slightly-low', '0xtoken', {
+      feePerUnitGas: '95',
+    });
+
+    const outOfBounds = buildOutOfBoundsBroadcasterSet([
+      overlappingTrusted,
+      secondTrusted,
+      slightlyLow,
+    ]);
+
+    expect(outOfBounds.has(slightlyLow)).toBe(false);
   });
 });

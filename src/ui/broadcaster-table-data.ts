@@ -1,5 +1,6 @@
 import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import { formatUnits } from 'ethers';
+import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from '../signers.js';
 import { getTokenDecimals, getTokenName, isChainNativeToken } from '../tokens.js';
 
 export type SortKey =
@@ -24,6 +25,85 @@ export const DEFAULT_BROADCASTER_TABLE_STATE: BroadcasterTableState = {
   sortKey: 'fee',
   sortDirection: 'asc',
 };
+
+const COMMUNITY_TRUSTED_SIGNERS = new Set(
+  [...RAILWAY_SIGNERS, ...TERMINAL_SIGNERS].map((address) => address.toLowerCase())
+);
+
+function getBroadcasterFeeValue(broadcaster: SelectedBroadcaster): bigint | undefined {
+  try {
+    return BigInt(broadcaster.tokenFee.feePerUnitGas ?? 0);
+  } catch {
+    return undefined;
+  }
+}
+
+export function buildOutOfBoundsBroadcasterSet(
+  broadcasters: SelectedBroadcaster[]
+): ReadonlySet<SelectedBroadcaster> {
+  const outOfBounds = new Set<SelectedBroadcaster>();
+  const broadcastersByToken = new Map<string, SelectedBroadcaster[]>();
+
+  broadcasters.forEach((broadcaster) => {
+    const tokenKey = broadcaster.tokenAddress.toLowerCase();
+    const tokenBroadcasters = broadcastersByToken.get(tokenKey);
+    if (tokenBroadcasters) {
+      tokenBroadcasters.push(broadcaster);
+    } else {
+      broadcastersByToken.set(tokenKey, [broadcaster]);
+    }
+  });
+
+  broadcastersByToken.forEach((tokenBroadcasters) => {
+    const trustedQuotes = tokenBroadcasters.filter((broadcaster) =>
+      COMMUNITY_TRUSTED_SIGNERS.has(broadcaster.railgunAddress.toLowerCase())
+    );
+
+    if (trustedQuotes.length === 0) {
+      return;
+    }
+
+    let totalTrustedFee = 0n;
+    let validTrustedQuoteCount = 0n;
+
+    trustedQuotes.forEach((broadcaster) => {
+      const feeValue = getBroadcasterFeeValue(broadcaster);
+      if (feeValue === undefined) {
+        return;
+      }
+
+      totalTrustedFee += feeValue;
+      validTrustedQuoteCount += 1n;
+    });
+
+    if (validTrustedQuoteCount === 0n) {
+      return;
+    }
+
+    const averageTrustedFee = totalTrustedFee / validTrustedQuoteCount;
+    const varianceLower = (averageTrustedFee * 10n) / 100n;
+    const varianceUpper = (averageTrustedFee * 30n) / 100n;
+    const minFee = averageTrustedFee - varianceLower;
+    const maxFee = averageTrustedFee + varianceUpper;
+
+    tokenBroadcasters.forEach((broadcaster) => {
+      if (COMMUNITY_TRUSTED_SIGNERS.has(broadcaster.railgunAddress.toLowerCase())) {
+        return;
+      }
+
+      const feeValue = getBroadcasterFeeValue(broadcaster);
+      if (feeValue === undefined) {
+        return;
+      }
+
+      if (feeValue < minFee || feeValue > maxFee) {
+        outOfBounds.add(broadcaster);
+      }
+    });
+  });
+
+  return outOfBounds;
+}
 
 export function processBroadcasters(
   broadcasters: SelectedBroadcaster[],

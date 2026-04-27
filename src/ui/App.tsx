@@ -15,6 +15,7 @@ import { identifySignerSet } from '../signers.js';
 import { PeerStatusSnapshot } from '../types.js';
 import { PeerTableRow, PeerTableState } from './peer-table-data.js';
 import {
+  buildOutOfBoundsBroadcasterSet,
   createBroadcasterSnapshotCsv,
   DEFAULT_BROADCASTER_TABLE_STATE,
   processBroadcasters,
@@ -140,6 +141,10 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const processedBroadcasters = useMemo(() => {
     return processBroadcasters(filteredBroadcasters, chainId, tableState);
   }, [filteredBroadcasters, chainId, tableState]);
+
+  const outOfBoundsBroadcasters = useMemo(() => {
+    return buildOutOfBoundsBroadcasterSet(currentData);
+  }, [currentData]);
 
   const writeSnapshot = () => {
     const targetDirectory = path.resolve(process.cwd(), screenshotDir);
@@ -311,6 +316,7 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
               tableState={tableState}
               setTableState={setTableState}
               trustedFeeSigners={status.trustedFeeSigners}
+              outOfBoundsBroadcasters={outOfBoundsBroadcasters}
             />
           </Box>
 

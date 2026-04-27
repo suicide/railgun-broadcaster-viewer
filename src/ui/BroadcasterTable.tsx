@@ -22,6 +22,7 @@ interface Props {
   tableState: BroadcasterTableState;
   setTableState: React.Dispatch<React.SetStateAction<BroadcasterTableState>>;
   trustedFeeSigners: string[];
+  outOfBoundsBroadcasters: ReadonlySet<SelectedBroadcaster>;
 }
 
 const truncateMiddle = (text: string, maxLength: number): string => {
@@ -41,6 +42,7 @@ export const BroadcasterTable: React.FC<Props> = ({
   tableState,
   setTableState,
   trustedFeeSigners,
+  outOfBoundsBroadcasters,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -225,6 +227,7 @@ export const BroadcasterTable: React.FC<Props> = ({
           const reliability = Math.round(b.tokenFee.reliability * 100) + '%';
           const relayAdapt = truncateMiddle(b.tokenFee.relayAdapt, Math.max(5, colAdapt - 1));
           const feeFormatted = formatBroadcasterFee(b, chainId);
+          const isOutOfBounds = outOfBoundsBroadcasters.has(b);
 
           // --- Highlighting Logic ---
           const isTrusted = trustedFeeSigners.includes(b.railgunAddress);
@@ -244,6 +247,9 @@ export const BroadcasterTable: React.FC<Props> = ({
             } else if (isPartner) {
               rowColor = 'black';
               rowBackgroundColor = 'cyan';
+            } else if (isOutOfBounds) {
+              rowColor = 'black';
+              rowBackgroundColor = 'red';
             } else {
               rowColor = 'black';
               rowBackgroundColor = 'white';
@@ -252,14 +258,13 @@ export const BroadcasterTable: React.FC<Props> = ({
             // Unselected Row Highlighting (Text Color Only)
             if (isTrusted) rowColor = 'yellow';
             else if (isPartner) rowColor = 'cyan';
+            else if (isOutOfBounds) rowColor = 'red';
             else rowColor = 'white';
           }
 
           // Fee Color Override for Normal Rows
           let feeColor = rowColor;
-          // If no specific highlight is applied to the row, maybe color the fee green if it's "good"?
-          // Keeping original behavior: if walletType was 'none' (now Tier 3), fee was green.
-          if (!isSelected && !isTrusted && !isPartner) {
+          if (!isSelected && !isTrusted && !isPartner && !isOutOfBounds) {
             feeColor = 'green';
           }
 
