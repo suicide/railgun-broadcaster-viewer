@@ -93,6 +93,7 @@ const BROADCASTER_ROWS: Row[] = [
   { type: 'blank' },
   { type: 'section', value: 'Keys' },
   { type: 'columns', left: 'p', middle: 'Switch view', right: 'Broadcasters <-> peers' },
+  { type: 'columns', left: 'r', middle: 'Toggle fees', right: 'Switch raw/formatted fees' },
   { type: 'columns', left: 's', middle: 'Save snapshot', right: 'Write current table CSV' },
   { type: 'columns', left: '/', middle: 'Filter', right: 'Search broadcaster rows' },
   { type: 'columns', left: '1-7', middle: 'Sort', right: 'Sort broadcaster columns' },

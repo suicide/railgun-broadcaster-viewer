@@ -6,6 +6,7 @@ import { getTokenName } from '../tokens.js';
 import { RAILWAY_SIGNERS, TERMINAL_SIGNERS } from '../signers.js';
 import {
   BroadcasterTableState,
+  FeeDisplayMode,
   SortKey,
   processBroadcasters,
   formatBroadcasterFee,
@@ -23,6 +24,7 @@ interface Props {
   setTableState: React.Dispatch<React.SetStateAction<BroadcasterTableState>>;
   trustedFeeSigners: string[];
   outOfBoundsBroadcasters: ReadonlySet<SelectedBroadcaster>;
+  feeDisplayMode: FeeDisplayMode;
 }
 
 const truncateMiddle = (text: string, maxLength: number): string => {
@@ -43,6 +45,7 @@ export const BroadcasterTable: React.FC<Props> = ({
   setTableState,
   trustedFeeSigners,
   outOfBoundsBroadcasters,
+  feeDisplayMode,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -226,7 +229,7 @@ export const BroadcasterTable: React.FC<Props> = ({
 
           const reliability = Math.round(b.tokenFee.reliability * 100) + '%';
           const relayAdapt = truncateMiddle(b.tokenFee.relayAdapt, Math.max(5, colAdapt - 1));
-          const feeFormatted = formatBroadcasterFee(b, chainId);
+          const feeFormatted = formatBroadcasterFee(b, chainId, feeDisplayMode);
           const isOutOfBounds = outOfBoundsBroadcasters.has(b);
 
           // --- Highlighting Logic ---

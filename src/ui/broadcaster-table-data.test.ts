@@ -3,6 +3,7 @@ import { SelectedBroadcaster } from '@railgun-community/shared-models';
 import {
   buildOutOfBoundsBroadcasterSet,
   createBroadcasterSnapshotCsv,
+  formatBroadcasterFee,
   processBroadcasters,
   type BroadcasterTableState,
 } from './broadcaster-table-data';
@@ -101,6 +102,54 @@ describe('broadcaster table data', () => {
     expect(lines[1]).toContain('USDT');
     expect(lines[1]).toContain('2026-01-02T03:04:05.000Z');
     expect(lines[1]).toContain('"waku://peer,quoted"');
+  });
+
+  it('formats native fees in formatted mode', () => {
+    const broadcaster = createBroadcaster(
+      'zk1-native',
+      '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      {
+        feePerUnitGas: '1000000000',
+      }
+    );
+
+    expect(formatBroadcasterFee(broadcaster, chainId)).toBe('1.00 Gwei');
+  });
+
+  it('formats token fees in formatted mode', () => {
+    const broadcaster = createBroadcaster('zk1-usdt', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
+      feePerUnitGas: '1000',
+    });
+
+    expect(formatBroadcasterFee(broadcaster, chainId)).toBe('0.001 USDT');
+  });
+
+  it('returns exact fee values in raw mode', () => {
+    const broadcaster = createBroadcaster('zk1-raw', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
+      feePerUnitGas: '1000',
+    });
+
+    expect(formatBroadcasterFee(broadcaster, chainId, 'raw')).toBe('1000');
+  });
+
+  it('writes formatted fee display to csv in formatted mode', () => {
+    const broadcaster = createBroadcaster('zk1-formatted-csv', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
+      feePerUnitGas: '1000',
+    });
+
+    const csv = createBroadcasterSnapshotCsv([broadcaster], chainId, 'formatted');
+
+    expect(csv.split('\n')[1]).toContain(',0.001 USDT,');
+  });
+
+  it('writes raw fee display to csv in raw mode', () => {
+    const broadcaster = createBroadcaster('zk1-raw-csv', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
+      feePerUnitGas: '1000',
+    });
+
+    const csv = createBroadcasterSnapshotCsv([broadcaster], chainId, 'raw');
+
+    expect(csv.split('\n')[1]).toContain(',1000,');
   });
 
   it('flags non-trusted quotes below and above the trusted band', () => {

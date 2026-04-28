@@ -20,6 +20,8 @@ export interface BroadcasterTableState {
   sortDirection: SortDirection;
 }
 
+export type FeeDisplayMode = 'formatted' | 'raw';
+
 export const DEFAULT_BROADCASTER_TABLE_STATE: BroadcasterTableState = {
   filterQuery: '',
   sortKey: 'fee',
@@ -171,10 +173,18 @@ export function processBroadcasters(
   });
 }
 
-export function formatBroadcasterFee(broadcaster: SelectedBroadcaster, chainId: number): string {
+export function formatBroadcasterFee(
+  broadcaster: SelectedBroadcaster,
+  chainId: number,
+  feeDisplayMode: FeeDisplayMode = 'formatted'
+): string {
   const tokenName = getTokenName(chainId, broadcaster.tokenAddress);
   const decimals = getTokenDecimals(chainId, broadcaster.tokenAddress);
   const feeRaw = broadcaster.tokenFee.feePerUnitGas;
+
+  if (feeDisplayMode === 'raw') {
+    return feeRaw;
+  }
 
   if (isChainNativeToken(chainId, broadcaster.tokenAddress)) {
     const feeGwei = parseFloat(formatUnits(feeRaw, 9));
@@ -206,7 +216,8 @@ function escapeCsvValue(value: string | number): string {
 
 export function createBroadcasterSnapshotCsv(
   broadcasters: SelectedBroadcaster[],
-  chainId: number
+  chainId: number,
+  feeDisplayMode: FeeDisplayMode = 'formatted'
 ): string {
   const headers = [
     'railgunAddress',
@@ -228,7 +239,7 @@ export function createBroadcasterSnapshotCsv(
       broadcaster.tokenAddress,
       tokenName,
       broadcaster.tokenFee.feePerUnitGas,
-      formatBroadcasterFee(broadcaster, chainId),
+      formatBroadcasterFee(broadcaster, chainId, feeDisplayMode),
       new Date(broadcaster.tokenFee.expiration).toISOString(),
       broadcaster.tokenFee.reliability,
       broadcaster.tokenFee.availableWallets,

@@ -18,6 +18,7 @@ import {
   buildOutOfBoundsBroadcasterSet,
   createBroadcasterSnapshotCsv,
   DEFAULT_BROADCASTER_TABLE_STATE,
+  FeeDisplayMode,
   processBroadcasters,
 } from './broadcaster-table-data.js';
 
@@ -103,6 +104,7 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const [selectedAddresses, setSelectedAddresses] = useState<Set<string>>(new Set());
   const [filterMode, setFilterMode] = useState(false);
   const [tableState, setTableState] = useState(DEFAULT_BROADCASTER_TABLE_STATE);
+  const [feeDisplayMode, setFeeDisplayMode] = useState<FeeDisplayMode>('formatted');
   const [peerFilterMode, setPeerFilterMode] = useState(false);
   const [peerTableState, setPeerTableState] = useState<PeerTableState>(DEFAULT_PEER_TABLE_STATE);
   const [selectedPeer, setSelectedPeer] = useState<PeerTableRow | null>(null);
@@ -153,10 +155,10 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
 
     try {
       fs.mkdirSync(targetDirectory, { recursive: true });
-      fs.writeFileSync(
-        filePath,
-        createBroadcasterSnapshotCsv(processedBroadcasters, chainId) + '\n'
-      );
+        fs.writeFileSync(
+          filePath,
+          createBroadcasterSnapshotCsv(processedBroadcasters, chainId, feeDisplayMode) + '\n'
+        );
       addAppLog(`Snapshot saved: ${filePath}`, 'success');
     } catch (error) {
       addAppLog(`Snapshot failed: ${(error as Error).message}`, 'error');
@@ -205,6 +207,11 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
         }
         return next;
       });
+      return;
+    }
+
+    if (viewMode === 'broadcasters' && focus === 'table' && !filterMode && input === 'r') {
+      setFeeDisplayMode((current) => (current === 'formatted' ? 'raw' : 'formatted'));
       return;
     }
 
@@ -285,12 +292,13 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
           View: {viewMode} | Peers: {status.peers} | Last Scan:{' '}
           {status.lastScan ? status.lastScan.toLocaleTimeString() : 'Pending'}
           {' | '}PX: {status.peerStatus.summary.peerExchangeCapableCount}
-          {' | '}Direct: {status.peerStatus.summary.configuredDirectConnectedCount}/
-          {status.peerStatus.summary.configuredDirectPeerCount}
-          {' | '}Peer Mode: {peerTableState.mode}
-          {isFrozen && (
-            <Text color="cyan" bold>
-              {' '}
+           {' | '}Direct: {status.peerStatus.summary.configuredDirectConnectedCount}/
+           {status.peerStatus.summary.configuredDirectPeerCount}
+           {' | '}Peer Mode: {peerTableState.mode}
+           {' | '}Fees: {feeDisplayMode}
+           {isFrozen && (
+             <Text color="cyan" bold>
+               {' '}
               | [FROZEN]
             </Text>
           )}
@@ -317,6 +325,7 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
               setTableState={setTableState}
               trustedFeeSigners={status.trustedFeeSigners}
               outOfBoundsBroadcasters={outOfBoundsBroadcasters}
+              feeDisplayMode={feeDisplayMode}
             />
           </Box>
 
