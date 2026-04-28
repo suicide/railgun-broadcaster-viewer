@@ -37,6 +37,8 @@ program
   .option('--native-only', 'Filter to show only native token fees')
   .option('--debug', 'Enable debug logging')
   .option('--log-to-file', 'Enable logging to file')
+  .option('--trace-fees', 'Write structured broadcaster scan traces to a JSONL file')
+  .option('--trace-fees-file <path>', 'Path to structured broadcaster trace JSONL file')
   .option('--screenshot-dir <path>', 'Directory for CSV table snapshots')
   .action(async (options) => {
     let config: AppConfig = {
@@ -48,6 +50,8 @@ program
       filterNative: options.nativeOnly || false,
       debug: options.debug || false,
       fileLogging: options.logToFile || false,
+      traceFees: options.traceFees || false,
+      traceFeesFile: options.traceFeesFile,
       screenshotDir: 'screenshots',
     };
 
@@ -73,6 +77,8 @@ program
     if (options.chainId) config.chainId = options.chainId;
     if (options.extendedStaticNodes) config.extendedStaticNodes = true;
     if (options.screenshotDir) config.screenshotDir = options.screenshotDir;
+    if (options.traceFees) config.traceFees = true;
+    if (options.traceFeesFile) config.traceFeesFile = options.traceFeesFile;
 
     const signers: string[] = [];
 

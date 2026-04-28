@@ -14,6 +14,8 @@ export interface AppConfig {
   filterNative?: boolean;
   debug?: boolean;
   fileLogging?: boolean;
+  traceFees?: boolean;
+  traceFeesFile?: string;
   screenshotDir?: string;
 }
 
