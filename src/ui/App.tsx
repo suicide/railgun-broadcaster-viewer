@@ -37,6 +37,13 @@ interface Log {
 type FocusArea = 'table' | 'address' | 'logs' | 'peers' | 'peer-details';
 type ViewMode = 'broadcasters' | 'peers';
 
+const MAX_LOG_ENTRIES = 500;
+
+const appendLogEntry = (previous: Log[], entry: Log): Log[] => {
+  const next = [...previous, entry];
+  return next.length > MAX_LOG_ENTRIES ? next.slice(-MAX_LOG_ENTRIES) : next;
+};
+
 export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const { stdout } = useStdout();
   const [dimensions, setDimensions] = useState({
@@ -111,12 +118,12 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
   const [showHelp, setShowHelp] = useState(false);
 
   const addAppLog = (message: string, type: Log['type'] = 'info') => {
-    setLogs((prev) => [...prev, { message, type, timestamp: new Date() }]);
+    setLogs((prev) => appendLogEntry(prev, { message, type, timestamp: new Date() }));
   };
 
   useEffect(() => {
     const onUpdate = (data: SelectedBroadcaster[]) => setBroadcasters(data);
-    const onLog = (log: Log) => setLogs((prev) => [...prev, log]);
+    const onLog = (log: Log) => setLogs((prev) => appendLogEntry(prev, log));
     const onStatus = (s: any) => setStatus(s);
 
     monitor.on('update', onUpdate);

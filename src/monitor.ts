@@ -49,6 +49,7 @@ export class BroadcasterMonitor extends EventEmitter {
   private chain: Chain;
   private isRunning: boolean = false;
   private timer: NodeJS.Timeout | null = null;
+  private isScanning: boolean = false;
 
   // State
   private broadcasters: SelectedBroadcaster[] = [];
@@ -141,9 +142,7 @@ export class BroadcasterMonitor extends EventEmitter {
       await this.scan();
 
       // Start polling
-      this.timer = setInterval(async () => {
-        await this.scan();
-      }, this.config.refreshInterval);
+      this.scheduleNextScan();
     } catch (error: any) {
       this.addLog(`Failed to start Waku Client: ${error.message}`, 'error');
       this.stop();
@@ -166,8 +165,21 @@ export class BroadcasterMonitor extends EventEmitter {
     this.emit('status', this.getStatus());
   }
 
+  private scheduleNextScan() {
+    if (!this.isRunning) {
+      return;
+    }
+
+    this.timer = setTimeout(async () => {
+      await this.scan();
+      this.scheduleNextScan();
+    }, this.config.refreshInterval);
+  }
+
   private async scan() {
-    if (!this.isRunning) return;
+    if (!this.isRunning || this.isScanning) return;
+
+    this.isScanning = true;
 
     try {
       const allBroadcasters =
@@ -219,6 +231,8 @@ export class BroadcasterMonitor extends EventEmitter {
       this.emit('status', this.getStatus());
     } catch (e: any) {
       this.addLog(`Scan failed: ${e.message}`, 'error');
+    } finally {
+      this.isScanning = false;
     }
   }
 
