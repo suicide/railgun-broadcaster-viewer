@@ -2,6 +2,13 @@
   "chainType": 0,
   "chainId": 1,
   "trustedFeeSigner": ["YOUR_TRUSTED_FEE_SIGNER_KEY_HERE"],
+  "useDnsDiscovery": false,
+  "additionalDirectPeers": [
+    "/ip4/127.0.0.1/tcp/8000/ws/p2p/16Uiu2HAmHPKQ9x3HUnkPvqN1s6Akj3BryqeQQZfNpdokA2yQ98aS"
+  ],
+  "storePeers": [
+    "/ip4/127.0.0.1/tcp/8000/ws/p2p/16Uiu2HAmHPKQ9x3HUnkPvqN1s6Akj3BryqeQQZfNpdokA2yQ98aS"
+  ],
   "extendedStaticNodes": false,
   "refreshInterval": 10000
 }

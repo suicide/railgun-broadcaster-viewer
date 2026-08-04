@@ -45,6 +45,7 @@ program
       chainType: DEFAULT_CHAIN_TYPE,
       chainId: DEFAULT_CHAIN_ID,
       trustedFeeSigner: undefined,
+      useDnsDiscovery: true,
       extendedStaticNodes: false,
       refreshInterval: DEFAULT_REFRESH,
       filterNative: options.nativeOnly || false,

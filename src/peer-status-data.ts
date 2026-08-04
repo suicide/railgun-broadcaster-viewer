@@ -94,15 +94,19 @@ const deriveCapabilities = (protocols: string[]): PeerCapability[] => {
 };
 
 const getConfiguredDirectMultiaddrs = (config: AppConfig): string[] => {
+  if (config.additionalDirectPeers?.length) {
+    return [...config.additionalDirectPeers];
+  }
+
   return config.extendedStaticNodes ? [...COMBINED_EXTENDED_STATIC_NODES] : [];
 };
 
-const getConfiguredStoreMultiaddrs = (_config: AppConfig): string[] => {
-  return [];
+const getConfiguredStoreMultiaddrs = (config: AppConfig): string[] => {
+  return config.storePeers ? [...config.storePeers] : [];
 };
 
-const getDnsDiscoveryUrls = (): string[] => {
-  return [...DEFAULT_NODE_DNS_DISCOVERY_URLS];
+const getDnsDiscoveryUrls = (config: AppConfig): string[] => {
+  return config.useDnsDiscovery === false ? [] : [...DEFAULT_NODE_DNS_DISCOVERY_URLS];
 };
 
 const buildConfiguredPeerEntries = (
@@ -190,8 +194,8 @@ export const createEmptyPeerStatusSnapshot = (config: AppConfig): PeerStatusSnap
     runtime: {
       hasWaku: false,
       isStarted: false,
-      useDNSDiscovery: true,
-      dnsDiscoveryUrls: getDnsDiscoveryUrls(),
+      useDNSDiscovery: config.useDnsDiscovery ?? true,
+      dnsDiscoveryUrls: getDnsDiscoveryUrls(config),
     },
     routing: {
       contentTopics: [],
@@ -327,8 +331,8 @@ export const derivePeerStatusSnapshot = async (
     runtime: {
       hasWaku: Boolean(waku),
       isStarted: waku?.isStarted?.() ?? false,
-      useDNSDiscovery: true,
-      dnsDiscoveryUrls: getDnsDiscoveryUrls(),
+      useDNSDiscovery: config.useDnsDiscovery ?? true,
+      dnsDiscoveryUrls: getDnsDiscoveryUrls(config),
     },
     routing: {
       clusterId: options?.clusterId,

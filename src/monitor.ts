@@ -113,10 +113,10 @@ export class BroadcasterMonitor extends EventEmitter {
       // IMPORTANT: trustedFeeSigner has to be set to undefined if we actually want to disable the feature
       // @ts-ignore
       trustedFeeSigner: this.config.trustedFeeSigner,
-      useDNSDiscovery: true,
-      additionalDirectPeers: this.config.extendedStaticNodes
-        ? [...COMBINED_EXTENDED_STATIC_NODES]
-        : undefined,
+      useDNSDiscovery: this.config.useDnsDiscovery ?? true,
+      additionalDirectPeers: this.config.additionalDirectPeers
+        ?? (this.config.extendedStaticNodes ? [...COMBINED_EXTENDED_STATIC_NODES] : undefined),
+      storePeers: this.config.storePeers,
       pubSubTopic: this.config.pubSubTopic,
     };
 
