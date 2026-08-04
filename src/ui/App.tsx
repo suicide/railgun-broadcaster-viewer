@@ -162,10 +162,10 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
 
     try {
       fs.mkdirSync(targetDirectory, { recursive: true });
-        fs.writeFileSync(
-          filePath,
-          createBroadcasterSnapshotCsv(processedBroadcasters, chainId, feeDisplayMode) + '\n'
-        );
+      fs.writeFileSync(
+        filePath,
+        createBroadcasterSnapshotCsv(processedBroadcasters, chainId, feeDisplayMode) + '\n'
+      );
       addAppLog(`Snapshot saved: ${filePath}`, 'success');
     } catch (error) {
       addAppLog(`Snapshot failed: ${(error as Error).message}`, 'error');
@@ -299,13 +299,13 @@ export const App: React.FC<Props> = ({ monitor, chainId, screenshotDir }) => {
           View: {viewMode} | Peers: {status.peers} | Last Scan:{' '}
           {status.lastScan ? status.lastScan.toLocaleTimeString() : 'Pending'}
           {' | '}PX: {status.peerStatus.summary.peerExchangeCapableCount}
-           {' | '}Direct: {status.peerStatus.summary.configuredDirectConnectedCount}/
-           {status.peerStatus.summary.configuredDirectPeerCount}
-           {' | '}Peer Mode: {peerTableState.mode}
-           {' | '}Fees: {feeDisplayMode}
-           {isFrozen && (
-             <Text color="cyan" bold>
-               {' '}
+          {' | '}Direct: {status.peerStatus.summary.configuredDirectConnectedCount}/
+          {status.peerStatus.summary.configuredDirectPeerCount}
+          {' | '}Peer Mode: {peerTableState.mode}
+          {' | '}Fees: {feeDisplayMode}
+          {isFrozen && (
+            <Text color="cyan" bold>
+              {' '}
               | [FROZEN]
             </Text>
           )}

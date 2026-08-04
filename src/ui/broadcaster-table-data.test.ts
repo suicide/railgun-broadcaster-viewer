@@ -117,9 +117,13 @@ describe('broadcaster table data', () => {
   });
 
   it('formats token fees in formatted mode', () => {
-    const broadcaster = createBroadcaster('zk1-usdt', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
-      feePerUnitGas: '1000',
-    });
+    const broadcaster = createBroadcaster(
+      'zk1-usdt',
+      '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      {
+        feePerUnitGas: '1000',
+      }
+    );
 
     expect(formatBroadcasterFee(broadcaster, chainId)).toBe('0.001 USDT');
   });
@@ -133,9 +137,13 @@ describe('broadcaster table data', () => {
   });
 
   it('writes formatted fee display to csv in formatted mode', () => {
-    const broadcaster = createBroadcaster('zk1-formatted-csv', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
-      feePerUnitGas: '1000',
-    });
+    const broadcaster = createBroadcaster(
+      'zk1-formatted-csv',
+      '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      {
+        feePerUnitGas: '1000',
+      }
+    );
 
     const csv = createBroadcasterSnapshotCsv([broadcaster], chainId, 'formatted');
 
@@ -143,9 +151,13 @@ describe('broadcaster table data', () => {
   });
 
   it('writes raw fee display to csv in raw mode', () => {
-    const broadcaster = createBroadcaster('zk1-raw-csv', '0xdac17f958d2ee523a2206206994597c13d831ec7', {
-      feePerUnitGas: '1000',
-    });
+    const broadcaster = createBroadcaster(
+      'zk1-raw-csv',
+      '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      {
+        feePerUnitGas: '1000',
+      }
+    );
 
     const csv = createBroadcasterSnapshotCsv([broadcaster], chainId, 'raw');
 

@@ -114,8 +114,9 @@ export class BroadcasterMonitor extends EventEmitter {
       // @ts-ignore
       trustedFeeSigner: this.config.trustedFeeSigner,
       useDNSDiscovery: this.config.useDnsDiscovery ?? true,
-      additionalDirectPeers: this.config.additionalDirectPeers
-        ?? (this.config.extendedStaticNodes ? [...COMBINED_EXTENDED_STATIC_NODES] : undefined),
+      additionalDirectPeers:
+        this.config.additionalDirectPeers ??
+        (this.config.extendedStaticNodes ? [...COMBINED_EXTENDED_STATIC_NODES] : undefined),
       storePeers: this.config.storePeers,
       pubSubTopic: this.config.pubSubTopic,
     };
@@ -253,21 +254,27 @@ export class BroadcasterMonitor extends EventEmitter {
     const allEntries = this.createTraceEntries(allBroadcasters);
     const visibleEntries = this.createTraceEntries(visibleBroadcasters);
 
-    this.writeTraceEvent({
-      event: 'viewer_scan_snapshot',
-      returnedCount: allBroadcasters.length,
-      visibleCount: visibleBroadcasters.length,
-      nativeFilteredCount: allBroadcasters.length - visibleBroadcasters.length,
-      filterNative: this.config.filterNative ?? false,
-      entries: allEntries,
-    }, scanTime);
+    this.writeTraceEvent(
+      {
+        event: 'viewer_scan_snapshot',
+        returnedCount: allBroadcasters.length,
+        visibleCount: visibleBroadcasters.length,
+        nativeFilteredCount: allBroadcasters.length - visibleBroadcasters.length,
+        filterNative: this.config.filterNative ?? false,
+        entries: allEntries,
+      },
+      scanTime
+    );
 
-    this.writeTraceEvent({
-      event: 'viewer_visible_order_snapshot',
-      visibleCount: visibleBroadcasters.length,
-      filterNative: this.config.filterNative ?? false,
-      entries: visibleEntries,
-    }, scanTime);
+    this.writeTraceEvent(
+      {
+        event: 'viewer_visible_order_snapshot',
+        visibleCount: visibleBroadcasters.length,
+        filterNative: this.config.filterNative ?? false,
+        entries: visibleEntries,
+      },
+      scanTime
+    );
 
     this.writeTokenRankingSnapshots(visibleEntries, scanTime);
     this.writeScanDiffEvents(visibleEntries, scanTime);
